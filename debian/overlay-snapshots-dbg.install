@@ -1,0 +1,2 @@
+bin/ovlsnap-init-dbg /usr/lib/debug/usr/bin/
+bin/ovlsnap-dbg /usr/lib/debug/usr/bin/
