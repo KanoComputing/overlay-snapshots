@@ -1,0 +1,30 @@
+Source: overlay-snapshots
+Maintainer: Team Kano <dev@kano.me>
+Section: admin
+Priority: optional
+Standards-Version: 3.9.4
+Build-Depends:
+   debhelper (>= 9),
+   build-essential,
+   libparson-dev,
+   libattr1-dev
+
+Package: overlay-snapshots
+Architecture: all
+Depends:
+   ${shlibs:Depends},
+   ${misc:Depends},
+   busybox-static
+Description: OverlayFS Filesystem Snapshots
+ This is a tool for making snapshots over the root filesystem. You can create
+ a snapshot on top of root to keep changes in, then either drop it entirely
+ or merge it back down. Supports multiple layer stacking.
+
+Package: overlay-snapshots-dbg
+Architecture: any
+Depends: ${misc:Depends},
+   busybox-static
+Description: OverlayFS Filesystem Snapshots with debug symbols
+ This is a tool for making snapshots over the root filesystem. You can create
+ a snapshot on top of root to keep changes in, then either drop it entirely
+ or merge it back down. Supports multiple layer stacking.

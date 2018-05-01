@@ -1,0 +1,132 @@
+#!/bin/bash
+
+# push-to-pi
+#
+# Copyright (C) 2018 Kano Computing Ltd.
+# License: http://www.gnu.org/licenses/gpl-2.0.txt GNU GPL v2
+#
+# A simple script to sync this project to the RPi.
+
+
+print_usage() {
+    echo "push-to-pi is a simple script to sync this project to the RPi."
+    echo ""
+    echo "Usage:"
+    echo "    push-to-pi [options]"
+    echo "    push-to-pi -h | --help"
+    echo ""
+    echo "Options:"
+    echo "    -u, --user=<user>"
+    echo "                    The user on the remote system. Default is root."
+    echo "    -i, --ip=<ip>   The ip of the remote system. Default is 10.0.0.126."
+    echo "    -l, --local     Sync files to the user home folder instead."
+    echo "                    Default user in this case is radu."
+    echo "    -v, --verbose   Show what commands I'm running."
+    echo "    -h, --help      Display this message."
+    echo ""
+    echo "Examples:"
+    echo "    push-to-pi -v"
+    echo "    push-to-pi -i 10.0.30.45"
+}
+
+
+# -- Arg Parsing --------------------------------------------------------------
+
+dest_user='root'
+dest_ip='10.0.30.105'
+to_local=0
+verbose=0
+
+for i in "$@"; do
+    case $i in
+        -u=*|--user=*)
+            dest_user="${i#*=}"
+            shift
+            ;;
+        -i=*|--ip=*)
+            dest_ip="${i#*=}"
+            shift
+            ;;
+        -l|--local)
+            to_local=1
+            dest_user='radu'
+            shift
+            ;;
+        -v|--verbose)
+            verbose=1
+            shift
+            ;;
+        -h|--help)
+            print_usage
+            exit 0
+            ;;
+        *)
+            # unknown option
+            ;;
+    esac
+done
+
+
+# -- Initialisation -----------------------------------------------------------
+
+# Turn on verbosity.
+if [ "$verbose" -eq 1 ]; then
+    set -x
+fi
+
+local_dest_dir="$(basename `pwd`)"
+local_dest_str="$(printf "%s@%s:~/%s" "$dest_user" "$dest_ip" "$local_dest_dir")"
+
+bin_dest_dir='/usr/bin/'
+bin_dest_str="$(printf "%s@%s:%s" "$dest_user" "$dest_ip" "$bin_dest_dir")"
+
+py_dest_dir='/usr/lib/python2.7/dist-packages/kano_init/'
+py_dest_str="$(printf "%s@%s:%s" "$dest_user" "$dest_ip" "$py_dest_dir")"
+
+systemd_dest_dir='/usr/lib/systemd/'
+systemd_dest_str="$(printf "%s@%s:%s" "$dest_user" "$dest_ip" "$systemd_dest_dir")"
+
+
+# -- Main ---------------------------------------------------------------------
+
+# TODO: Move all excludes into one string. Better yet, use .gitignore?
+# TODO: Get rid of multiple password prompts. Possibly use a single rsync?
+
+if [ "$to_local" -eq 1 ]; then
+
+    rsync -ravz -e ssh \
+        --exclude='.git' --exclude='*.pyc' --exclude='*.swp' \
+        --exclude='.DS_Store' --exclude='*.o' --exclude='moc_*' \
+        --exclude='.qmake*' --exclude='debug' --exclude='release' \
+        "$(pwd)/" "$local_dest_str"
+
+else
+    rsync -ravz -e ssh \
+        --exclude='.git' --exclude='*.pyc' --exclude='*.swp' \
+        --exclude='.DS_Store' --exclude='*.o' --exclude='moc_*' \
+        --exclude='.qmake*' --exclude='debug' --exclude='release' \
+        "$(pwd)/bin/" "$bin_dest_str"
+
+    rsync -ravz -e ssh \
+        --exclude='.git' --exclude='*.pyc' --exclude='*.swp' \
+        --exclude='.DS_Store' --exclude='*.o' --exclude='moc_*' \
+        --exclude='.qmake*' --exclude='debug' --exclude='release' \
+        "$(pwd)/kano_init/" "$py_dest_str"
+
+    rsync -ravz -e ssh \
+        --exclude='.git' --exclude='*.pyc' --exclude='*.swp' \
+        --exclude='.DS_Store' --exclude='*.o' --exclude='moc_*' \
+        --exclude='.qmake*' --exclude='debug' --exclude='release' \
+        "$(pwd)/systemd/" "$systemd_dest_str"
+fi
+
+
+# -- Clean Up -----------------------------------------------------------------
+
+# Turn off verbosity.
+if [ "$verbose" -eq 1 ]; then
+    set +x
+fi
+
+# Exit cleanly.
+exit 0
