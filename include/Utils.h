@@ -19,8 +19,10 @@
 #include <attr/xattr.h>
 
 
-std::string runCmd(const char* cmd);
 bool jsonArrayContainsString(JSON_Array* jsonArray, std::string someString);
+
+std::string runCmd(const char* cmd);
+bool createDir(const char* path);
 
 mode_t permission_bits(const struct stat *status);
 mode_t file_type(const struct stat *status);

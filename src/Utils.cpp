@@ -10,6 +10,7 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <errno.h>
 #include <string>
 #include <iostream>
 #include <array>
@@ -24,6 +25,18 @@
 #define WHITEOUT_DEV 0 // exactly the same as in linux/fs.h
 const char *ovl_opaque_xattr = "trusted.overlay.opaque"; // exact the same as in fs/overlayfs/super.c
 
+
+bool jsonArrayContainsString(JSON_Array* jsonArray, std::string someString) {
+    std::string currentString;
+
+    for (int i = 0; i < json_array_get_count(jsonArray); i++) {
+        currentString = std::string(json_array_get_string(jsonArray, i));
+        if (currentString.compare(someString) == 0) {
+            return true;
+        }
+    }
+    return false;
+}
 
 std::string runCmd(const char* cmd) {
     std::array<char, 128> buffer;
@@ -43,16 +56,13 @@ std::string runCmd(const char* cmd) {
     return result;
 }
 
-bool jsonArrayContainsString(JSON_Array* jsonArray, std::string someString) {
-    std::string currentString;
+bool createDir(const char* path) {
+    int rc = mkdir(path, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
 
-    for (int i = 0; i < json_array_get_count(jsonArray); i++) {
-        currentString = std::string(json_array_get_string(jsonArray, i));
-        if (currentString.compare(someString) == 0) {
-            return true;
-        }
+    if (rc != 0 && errno != EEXIST) {
+        return false;
     }
-    return false;
+    return true;
 }
 
 mode_t file_type(const struct stat *status) {

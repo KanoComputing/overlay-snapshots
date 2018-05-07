@@ -26,6 +26,19 @@ Snapshot::Snapshot(JSON_Object* statusLoadedData) {
     this->statusData = statusLoadedData;
 
     this->snapshots = json_object_get_array(this->statusData, "snapshots");
+
+    if (!createDir(Snapshot::BASE_OVERLAYS_PATH)) {
+        std::cout << "[ERROR] Snapshot constructor: Could not create base overlays dir!\n";
+    }
+    if (!createDir(getWorkDir().c_str())) {
+        std::cout << "[ERROR] Snapshot constructor: Could not create workdir!\n";
+    }
+    if (!createDir(getMergedDir().c_str())) {
+        std::cout << "[ERROR] Snapshot constructor: Could not create mergeddir!\n";
+    }
+    if (!createDir(getRealDir().c_str())) {
+        std::cout << "[ERROR] Snapshot constructor: Could not create realdir!\n";
+    }
     computePaths();
 }
 
@@ -34,16 +47,18 @@ Snapshot::~Snapshot() {
 
 bool Snapshot::create(std::string snapshotName) {
     if (jsonArrayContainsString(this->snapshots, snapshotName)) {
-        std::cout << "[Error] Snapshot: create: Snapshots already contains "
+        std::cout << "[ERROR] Snapshot: create: Snapshots already contains "
                   << snapshotName << "\n";
         // TODO: Set error code.
         return false;
     }
 
+    std::string snapshotPath =
+        std::string(Snapshot::BASE_OVERLAYS_PATH) + "/" + snapshotName;
+
     // TODO?: Edge case: the dir is already created.
-    std::string snapshotPath = std::string(Snapshot::BASE_OVERLAYS_PATH) + "/" + snapshotName;
-    if (mkdir(snapshotPath.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) != 0) {
-        std::cout << "[Error] Snapshot: create: Could not create "
+    if (!createDir(snapshotPath.c_str())) {
+        std::cout << "[ERROR] Snapshot: create: Could not create "
                   << snapshotPath << "\n";
         // TODO: Set error code.
         return false;
@@ -72,7 +87,7 @@ bool Snapshot::drop(int topMostSnapshots) {
 
         std::cout << "Snapshot: drop: Removing snapshot " << snapshotPath << "\n";
         if (system(cmd.c_str()) != 0) {
-            std::cout << "[Error] Snapshot: drop: Could not remove " << snapshotPath << "\n";
+            std::cout << "[ERROR] Snapshot: drop: Could not remove " << snapshotPath << "\n";
             // TODO: Set error code.
             return false;
         }

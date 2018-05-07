@@ -27,5 +27,7 @@ clean-debug:
 clean-debian:
 	-rm -rf debian/overlay-snapshots
 	-rm -rf debian/overlay-snapshots-dbg
-	-rm -rf debian/*.log
+	-rm -rf debian/files
 	-rm -rf debian/debhelper-build-stamp
+	-rm -rf debian/*.log
+	-rm -rf debian/*.substvars

@@ -28,10 +28,11 @@ class Status {
         JSON_Object* getData();
 
     private:  // Members.
-        JSON_Value* status_json;
+        JSON_Value* data;
 
     private:  // Constants.
         static constexpr const char* STATUS_PATH = "/boot/ovlsnap_status.json";
+        static constexpr const char* DEFAULT_STATUS_PATH = "/usr/share/overlay-snapshots/ovlsnap_status.json";
 };
 
 #endif

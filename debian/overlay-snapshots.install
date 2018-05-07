@@ -1,2 +1,4 @@
 bin/ovlsnap-init /bin/
 bin/ovlsnap /usr/bin/
+
+conf/overlay-snapshots /usr/share/

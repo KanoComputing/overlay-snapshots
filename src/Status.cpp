@@ -17,25 +17,31 @@ Status::Status() {
 }
 
 Status::~Status() {
-    json_value_free(this->status_json);
+    json_value_free(this->data);
 }
 
 void Status::load() {
-    this->status_json = json_parse_file(Status::STATUS_PATH);
-    // TODO: Validate JSON result.
+    this->data = json_parse_file(Status::STATUS_PATH);
+
+    if (this->data == NULL) {
+        std::cout << "[WARNING] Status: load: Could not load status file,"
+                  << " using default one.\n";
+        this->data = json_parse_file(Status::DEFAULT_STATUS_PATH);
+    }
+
     std::cout << "Status: load: JSON is: "
-              << json_serialize_to_string_pretty(this->status_json) << "\n";
+              << json_serialize_to_string_pretty(this->data) << "\n";
 }
 
 void Status::save() {
     JSON_Status status = json_serialize_to_file_pretty(
-        this->status_json, Status::STATUS_PATH
+        this->data, Status::STATUS_PATH
     );
     // TODO: Validate status.
     std::cout << "Status: save: JSON is: "
-              << json_serialize_to_string_pretty(this->status_json) << "\n";
+              << json_serialize_to_string_pretty(this->data) << "\n";
 }
 
 JSON_Object* Status::getData() {
-    return json_value_get_object(this->status_json);
+    return json_value_get_object(this->data);
 }
