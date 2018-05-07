@@ -6,32 +6,26 @@
 # Standardised project interface.
 
 
-.PHONY: all release debug clean clean-release clean-debug
+.PHONY: all debug clean clean-debug clean-debian
 
 
-all: release debug
-
-release:
-	mkdir -p build/release && \
-		cd build/release && \
-		cmake -D BUILD_TYPE=Release ../ && \
-		make
+all: debug
 
 debug:
 	mkdir -p build/debug && \
 		cd build/debug && \
-		cmake -D BUILD_TYPE=Debug ../ && \
-		make
+		cmake ../ && \
+		make --jobs
 
-clean: clean-release clean-debug
-
-clean-release:
-	-rm -rf build/release
-	-rm -f bin/ovlsnap
-	-rm -f bin/ovlsnap-init
+clean: clean-debug clean-debian
 
 clean-debug:
 	-rm -rf build/debug
-	-rm -f bin/ovlsnap-dbg
-	-rm -f bin/ovlsnap-init-dbg
+	-rm -f bin/ovlsnap
+	-rm -f bin/ovlsnap-init
 
+clean-debian:
+	-rm -rf debian/overlay-snapshots
+	-rm -rf debian/overlay-snapshots-dbg
+	-rm -rf debian/*.log
+	-rm -rf debian/debhelper-build-stamp
