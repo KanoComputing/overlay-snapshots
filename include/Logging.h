@@ -18,7 +18,7 @@
 // TODO: Add file/syslog logging here.
 #ifdef _DEBUG_
     #define LOG_ERROR(message) do { \
-        std::cerr << "[" << timenow() << "] [ERROR] " << message << std::endl; \
+        std::cerr << "[" << timeNow() << "] [ERROR] " << message << std::endl; \
     } while (0)
 #else
     #define LOG_ERROR(message)
@@ -28,7 +28,7 @@
 // TODO: Add file/syslog logging here.
 #ifdef _DEBUG_
     #define LOG_WARN(message) do { \
-        std::cerr << "[" << timenow() << "] [WARNING] " << message << std::endl; \
+        std::cerr << "[" << timeNow() << "] [WARNING] " << message << std::endl; \
     } while (0)
 #else
     #define LOG_WARN(message)
@@ -38,7 +38,7 @@
 // TODO: Add file/syslog logging here.
 #ifdef _DEBUG_
     #define LOG_INFO(message) do { \
-        std::cout << "[" << timenow() << "] [INFO] " << message << std::endl; \
+        std::cout << "[" << timeNow() << "] [INFO] " << message << std::endl; \
     } while (0)
 #else
     #define LOG_INFO(message)
@@ -48,14 +48,15 @@
 // TODO: Add file/syslog logging here.
 #ifdef _DEBUG_
     #define LOG_DEBUG(message) do { \
-        std::cout << "[" << timenow() << "] [DEBUG] " << message << std::endl; \
+        std::cout << "[" << timeNow() << "] [DEBUG] " << message << std::endl; \
     } while (0)
 #else
     #define LOG_DEBUG(message)
 #endif
 
 
-static inline char* timenow() {
+static inline char* timeNow() {
+    // From: https://github.com/dmcrodrigues/macro-logger
     static char buffer[64];
     time_t rawtime;
     struct tm* timeinfo;

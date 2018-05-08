@@ -1,0 +1,17 @@
+# overlay-snapshots.postrm
+#
+# Copyright (C) 2018 Kano Computing Ltd.
+# License: http://www.gnu.org/licenses/gpl-2.0.txt GNU GPL v2
+#
+# TODO
+
+
+case "$1" in
+    remove)
+        sed -i 's| init=/bin/ovlsnap-init||g' /boot/cmdline.txt
+    ;;
+esac
+
+#DEBHELPER#
+
+exit 0

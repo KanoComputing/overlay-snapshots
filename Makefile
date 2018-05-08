@@ -15,6 +15,7 @@ debug:
 		make --jobs
 
 release: debug
+	# apt-get install -y binutils
 	strip --strip-all bin/ovlsnap
 	strip --strip-all bin/ovlsnap-init
 

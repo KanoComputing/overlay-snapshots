@@ -15,7 +15,8 @@ Architecture: all
 Depends:
     ${shlibs:Depends},
     ${misc:Depends},
-    busybox-static
+    busybox-static,
+    sed
 Description: OverlayFS Filesystem Snapshots
  This is a tool for making snapshots over the root filesystem. You can create
  a snapshot on top of root to keep changes in, then either drop it entirely
