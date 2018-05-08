@@ -11,6 +11,7 @@
 #include <parson/parson.h>
 
 #include "Status.h"
+#include "Logging.h"
 
 
 Status::Status() {
@@ -24,13 +25,12 @@ void Status::load() {
     this->data = json_parse_file(Status::STATUS_PATH);
 
     if (this->data == NULL) {
-        std::cout << "[WARNING] Status: load: Could not load status file,"
-                  << " using default one.\n";
+        LOG_WARN("Status: load: Could not load status file, using default one.");
         this->data = json_parse_file(Status::DEFAULT_STATUS_PATH);
     }
 
-    std::cout << "Status: load: JSON is: "
-              << json_serialize_to_string_pretty(this->data) << "\n";
+    LOG_DEBUG("Status: load: JSON is: "
+              << json_serialize_to_string_pretty(this->data));
 }
 
 void Status::save() {
@@ -38,8 +38,8 @@ void Status::save() {
         this->data, Status::STATUS_PATH
     );
     // TODO: Validate status.
-    std::cout << "Status: save: JSON is: "
-              << json_serialize_to_string_pretty(this->data) << "\n";
+    LOG_DEBUG("Status: save: JSON is: "
+              << json_serialize_to_string_pretty(this->data));
 }
 
 JSON_Object* Status::getData() {

@@ -20,10 +20,13 @@
 #include <attr/xattr.h>
 
 #include "Utils.h"
+#include "Logging.h"
 
 
-#define WHITEOUT_DEV 0 // exactly the same as in linux/fs.h
-const char *ovl_opaque_xattr = "trusted.overlay.opaque"; // exact the same as in fs/overlayfs/super.c
+// exactly the same as in linux/fs.h
+#define WHITEOUT_DEV 0
+// exact the same as in fs/overlayfs/super.c
+const char *ovl_opaque_xattr = "trusted.overlay.opaque";
 
 
 bool jsonArrayContainsString(JSON_Array* jsonArray, std::string someString) {
@@ -44,7 +47,7 @@ std::string runCmd(const char* cmd) {
     std::shared_ptr<FILE> pipe(popen(cmd, "r"), pclose);
 
     if (!pipe) {
-        std::cout << "runCmd: popen() failed!";
+        LOG_ERROR("runCmd: popen() failed!");
         goto end;
     }
 

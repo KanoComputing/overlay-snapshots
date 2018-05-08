@@ -20,6 +20,7 @@
 
 #include "Snapshot.h"
 #include "Utils.h"
+#include "Logging.h"
 
 
 Snapshot::Snapshot(JSON_Object* statusLoadedData) {
@@ -28,16 +29,16 @@ Snapshot::Snapshot(JSON_Object* statusLoadedData) {
     this->snapshots = json_object_get_array(this->statusData, "snapshots");
 
     if (!createDir(Snapshot::BASE_OVERLAYS_PATH)) {
-        std::cout << "[ERROR] Snapshot constructor: Could not create base overlays dir!\n";
+        LOG_ERROR("Snapshot constructor: Could not create base overlays dir!");
     }
     if (!createDir(getWorkDir().c_str())) {
-        std::cout << "[ERROR] Snapshot constructor: Could not create workdir!\n";
+        LOG_ERROR("Snapshot constructor: Could not create workdir!");
     }
     if (!createDir(getMergedDir().c_str())) {
-        std::cout << "[ERROR] Snapshot constructor: Could not create mergeddir!\n";
+        LOG_ERROR("Snapshot constructor: Could not create mergeddir!");
     }
     if (!createDir(getRealDir().c_str())) {
-        std::cout << "[ERROR] Snapshot constructor: Could not create realdir!\n";
+        LOG_ERROR("Snapshot constructor: Could not create realdir!");
     }
     computePaths();
 }
@@ -47,8 +48,7 @@ Snapshot::~Snapshot() {
 
 bool Snapshot::create(std::string snapshotName) {
     if (jsonArrayContainsString(this->snapshots, snapshotName)) {
-        std::cout << "[ERROR] Snapshot: create: Snapshots already contains "
-                  << snapshotName << "\n";
+        LOG_ERROR("Snapshot: create: Snapshots already contains " << snapshotName);
         // TODO: Set error code.
         return false;
     }
@@ -58,8 +58,7 @@ bool Snapshot::create(std::string snapshotName) {
 
     // TODO?: Edge case: the dir is already created.
     if (!createDir(snapshotPath.c_str())) {
-        std::cout << "[ERROR] Snapshot: create: Could not create "
-                  << snapshotPath << "\n";
+        LOG_ERROR("Snapshot: create: Could not create " << snapshotPath);
         // TODO: Set error code.
         return false;
     }
@@ -85,9 +84,10 @@ bool Snapshot::drop(int topMostSnapshots) {
             std::string(json_array_get_string(this->snapshots, i));
         cmd = std::string("/bin/busybox rm -rf ") + snapshotPath;
 
-        std::cout << "Snapshot: drop: Removing snapshot " << snapshotPath << "\n";
+        LOG_INFO("Snapshot: drop: Removing snapshot " << snapshotPath);
+
         if (system(cmd.c_str()) != 0) {
-            std::cout << "[ERROR] Snapshot: drop: Could not remove " << snapshotPath << "\n";
+            LOG_ERROR("Snapshot: drop: Could not remove " << snapshotPath);
             // TODO: Set error code.
             return false;
         }
@@ -125,8 +125,7 @@ bool Snapshot::merge(int topMostSnapshots) {
 
         // TODO: /tmp should be discarded anyway. Safe?
         cmd = std::string("/bin/busybox rm -r ") + upperPath + std::string("/tmp");
-        std::cout << "Snapshot: merge: Silently removing /tmp from "
-                  << upperPath << "\n";
+        LOG_INFO("Snapshot: merge: Silently removing /tmp from " << upperPath);
         system(cmd.c_str());
 
         // TODO: Is it safe to attempt this multiple times?
@@ -142,8 +141,8 @@ bool Snapshot::merge(int topMostSnapshots) {
         } while (rc != 0 || tries == 0);
 
         if (rc != 0) {
-            std::cout << "[ERROR] Snapshot: merge: Merging " << upperPath
-                      << " to " << lowerPath << " failed with rc = " << rc << "\n";
+            LOG_ERROR("Snapshot: merge: Merging " << upperPath << " to "
+                      << lowerPath << " failed with rc = " << rc);
             goto end;
         }
 
@@ -167,7 +166,7 @@ void Snapshot::status() {
             std::string(json_array_get_string(this->snapshots, i));
         std::cout << "  " << snapshotPath << "\n";
     }
-    std::cout << "  " << std::string(Snapshot::OVERLAY_ROOT_DIR) << "\n";
+    std::cout << "  " << Snapshot::OVERLAY_ROOT_DIR << "\n";
 }
 
 void Snapshot::computePaths() {
@@ -190,12 +189,13 @@ void Snapshot::computePaths() {
             std::string(json_array_get_string(this->snapshots, snapshotCount - 1));
     }
 
-    std::cout << "Snapshot: computePaths:\n"
+    LOG_DEBUG("Snapshot: computePaths: "
               << "\tlowerDir is: " << getLowerDir() << "\n"
               << "\tupperDir is: " << getUpperDir() << "\n"
               << "\tworkDir is: " << getWorkDir() << "\n"
               << "\tmergedDir is: " << getMergedDir() << "\n"
-              << "\trealDir is: " << getMergedDir() + getRealDir() << "\n";
+              << "\trealDir is: " << getMergedDir() + getRealDir()
+    );
 }
 
 int Snapshot::getSnapshotsCount() {
@@ -267,15 +267,14 @@ int Snapshot::traverse(
                 } else {
                     // TODO: Is skipping & removing unsupported files safe?
                     // return_val = -1;
-                    std::cout << "[WARNING] File " << std::string(cur->fts_path)
-                              << " is a special file (device or pipe) which"
-                              << " cannot handled. Removing file!\n";
+                    LOG_WARN("File " << cur->fts_path << " is a special file"
+                             << " (device or pipe) which cannot be handled."
+                             << " Removing file!");
                 }
                 break;
             default:
                 return_val = -1;
-                std::cout << "[ERROR] Snapshot: traverse: When opening"
-                          << std::string(cur->fts_path) << "\n";
+                LOG_ERROR("Snapshot: traverse: When opening" << cur->fts_path);
         }
         if (callback != NULL) {
             int fts_instr = 0;
@@ -286,8 +285,7 @@ int Snapshot::traverse(
                 if (errno == ENOENT || errno == ENOTDIR) { // the corresponding lower file (or its ancestor) does not exist at all
                     lower_exist = false;
                 } else { // stat failed for some unknown reason
-                    std::cout << "[ERROR] Snapshot: traverse: Failed to stat "
-                              << std::string(lower_path) << "\n";
+                    LOG_ERROR("Snapshot: traverse: Failed to stat " << lower_path);
                     return_val = -1;
                     break; // do not call callback in this case
                 }
@@ -318,17 +316,15 @@ int Snapshot::merge_d(
         if (file_type(lower_status) == S_IFDIR) {
             bool opaque = false;
             if (is_opaquedir(upper_path, &opaque) < 0) {
-                std::cout << "[ERROR] Snapshot: merge_d: is_opaquedir failed on "
-                          << std::string(upper_path) << "\n";
+                LOG_ERROR("Snapshot: merge_d: is_opaquedir failed on " << upper_path);
                 return -1;
             }
             if (opaque) {
                 cmd = std::string("/bin/busybox rm -r ") +
                       std::string(lower_path);
-                std::cout << "Snapshot: merge_d: " << cmd << "\n";
+                LOG_INFO("Snapshot: merge_d: " << cmd);
                 if (system(cmd.c_str()) < 0) {
-                    std::cout << "[ERROR] Snapshot: merge_d: Could not remove "
-                              << std::string(lower_path) << "\n";
+                    LOG_ERROR("Snapshot: merge_d: Could not remove " << lower_path);
                     return -1;
                 };
             } else {
@@ -336,21 +332,21 @@ int Snapshot::merge_d(
                     cmd = std::string("/bin/busybox chmod --reference ") +
                           std::string(upper_path) +
                           std::string(lower_path);
-                    std::cout << "Snapshot: merge_d: " << cmd << "\n";
+                    LOG_INFO("Snapshot: merge_d: " << cmd);
                     system(cmd.c_str());
                 }
                 return 0; // children must be recursed, and directory itself does not need to be printed
             }
         } else {
             cmd = std::string("/bin/busybox rm %'") + std::string(lower_path);
-            std::cout << "Snapshot: merge_d: " << cmd << "\n";
+            LOG_INFO("Snapshot: merge_d: " << cmd);
             system(cmd.c_str());
         }
     }
     *fts_instr = FTS_SKIP;
     cmd = std::string("/bin/busybox mv -f ") +
           std::string(upper_path) + std::string(" ") + std::string(lower_path);
-    std::cout << "Snapshot: merge_d: " << cmd << "\n";
+    LOG_INFO("Snapshot: merge_d: " << cmd);
     return system(cmd.c_str());
 }
 
@@ -367,7 +363,7 @@ int Snapshot::merge_dp(
             if (!opaque) { // delete the directory: it should be empty already
                 // TODO: If files were skipped, rmdir won't work here.
                 cmd = std::string("/bin/busybox rm -r ") + std::string(upper_path);
-                std::cout << "Snapshot: merge_dp: " << cmd << "\n";
+                LOG_INFO("Snapshot: merge_dp: " << cmd);
                 return system(cmd.c_str());
             }
         }
@@ -386,8 +382,8 @@ int Snapshot::merge_f_sl(
         std::string("/bin/busybox mv -f ") +
         std::string(upper_path) + std::string(" ") + std::string(lower_path);
 
-    std::cout << "Snapshot: merge_f_sl: " << rm_cmd << "\n";
-    std::cout << "Snapshot: merge_f_sl: " << mv_cmd << "\n";
+    LOG_INFO("Snapshot: merge_f_sl: " << rm_cmd);
+    LOG_INFO("Snapshot: merge_f_sl: " << mv_cmd);
     return system(rm_cmd.c_str()) || system(mv_cmd.c_str());
 }
 
@@ -401,7 +397,7 @@ int Snapshot::merge_whiteout(
     std::string rmu_cmd =
         std::string("/bin/busybox rm ") + std::string(upper_path);
 
-    std::cout << "Snapshot: merge_whiteout: " << rml_cmd << "\n";
-    std::cout << "Snapshot: merge_whiteout: " << rmu_cmd << "\n";
+    LOG_INFO("Snapshot: merge_whiteout: " << rml_cmd);
+    LOG_INFO("Snapshot: merge_whiteout: " << rmu_cmd);
     return system(rml_cmd.c_str()) || system(rmu_cmd.c_str());
 }

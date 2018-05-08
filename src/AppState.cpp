@@ -14,6 +14,7 @@
 #include <parson/parson.h>
 
 #include "AppState.h"
+#include "Logging.h"
 
 
 AppState::AppState(JSON_Object* statusLoadedData) {
@@ -22,7 +23,7 @@ AppState::AppState(JSON_Object* statusLoadedData) {
     this->state = (AppState::State)(int)json_object_get_number(
         this->statusData, "state"
     );
-    std::cout << "AppState: state is: " << std::to_string(this->state) << "\n";
+    LOG_DEBUG("AppState: state is: " << std::to_string(this->state));
 }
 
 AppState::~AppState() {
@@ -31,8 +32,7 @@ AppState::~AppState() {
 void AppState::changeState(AppState::State newState) {
     this->state = newState;
     json_object_set_number(this->statusData, "state", newState);
-    std::cout << "AppState: changeState: new state is: "
-              << std::to_string(this->state) << "\n";
+    LOG_DEBUG("AppState: changeState: new state is: " << std::to_string(this->state));
 }
 
 AppState::State AppState::getState() {

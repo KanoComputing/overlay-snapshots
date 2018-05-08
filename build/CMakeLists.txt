@@ -15,6 +15,12 @@ set(SRC "${CMAKE_CURRENT_LIST_DIR}/../src")
 include_directories("${CMAKE_CURRENT_LIST_DIR}/../include")
 
 set(CMAKE_BUILD_TYPE Debug)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
+
+if("${BUILD_TYPE}" STREQUAL "Development")
+    message("++ Setting development flags")
+    set(CMAKE_CXX_FLAGS "-D_DEBUG_")
+endif()
 
 # TODO: compile this lib to be static not dynamic.
 find_library(LIBPARSON_STATIC parson)
