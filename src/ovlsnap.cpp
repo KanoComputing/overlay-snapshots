@@ -22,31 +22,36 @@
 
 const std::string usage =
     "Usage:\n"
-    "    ovlsnap (enable | disable) [options]\n"
-    "    ovlsnap create <snapshot_name> [options]\n"
-    "    ovlsnap drop <top_most_snapshots> [options]\n"
-    "    ovlsnap merge <top_most_snapshots> [options]\n"
+    "    ovlsnap (enable | disable) [-f]\n"
+    "    ovlsnap create <snapshot_name> [-f]\n"
+    "    ovlsnap drop <top_most_snapshots> [-f]\n"
+    "    ovlsnap merge <top_most_snapshots> [-f]\n"
     "    ovlsnap status\n"
     "    ovlsnap -h | --help\n"
     "\n"
     "Commands:\n"
-    "    enable\n"
-    "    disable\n"
-    "    create\n"
-    "    drop\n"
-    "    merge\n"
-    "    status\n"
+    "    enable    Enable snapshots to be mounted at boot.\n"
+    "    disable   Disable snapshots from being mounted at boot.\n"
+    "    create    Schedule the creation a new snapshot at boot. The new\n"
+    "              snapshot will be placed at the top of the stack.\n"
+    "    drop      Schedule the removal of top most snapshots at boot. This\n"
+    "              will remove any changes made in the removed snapshots.\n"
+    "    merge     Schedule the merger of snapshots at boot. This will merge\n"
+    "              all changes from the merging snapshots into the level below.\n"
+    "    status    Show the current state of the system and snapshots.\n"
     "\n"
     "Arguments:\n"
-    "    <snapshot_name>\n"
-    "    <top_most_snapshots>\n"
+    "    <snapshot_name>        (str) The name of a new snapshot.\n"
+    "    <top_most_snapshots>   (int) A number of snapshots from the top of\n"
+    "                           the stack.\n"
     "\n"
     "Options:\n"
-    "    -f, --force\n"
-    "    -h, --help\n"
+    "    -f, --force   Force the given operation (to overwrite any existing).\n"
+    "    -h, --help    Show this message.\n"
     "\n"
     "Examples:\n"
-    "    TODO\n";
+    "    ovlsnap create 'layer1'\n"
+    "    ovlsnap merge 1\n";
 
 
 void printUsage() {
@@ -55,7 +60,7 @@ void printUsage() {
 
 int enable(bool force, Status* appStatus, AppState* appState) {
     JSON_Object* statusData = appStatus->getData();
-    AppState::State state = (AppState::State)(int)json_object_get_number(statusData, "state");
+    AppState::State state = appState->getState();
     JSON_Array* stateParams = json_object_get_array(statusData, "state_params");
 
     if (not force && (state == AppState::DROP || state == AppState::MERGE ||
@@ -74,7 +79,7 @@ int enable(bool force, Status* appStatus, AppState* appState) {
 
 int disable(bool force, Status* appStatus, AppState* appState) {
     JSON_Object* statusData = appStatus->getData();
-    AppState::State state = (AppState::State)(int)json_object_get_number(statusData, "state");
+    AppState::State state = appState->getState();
     JSON_Array* stateParams = json_object_get_array(statusData, "state_params");
 
     if (not force && (state == AppState::DROP || state == AppState::MERGE ||
@@ -93,7 +98,7 @@ int disable(bool force, Status* appStatus, AppState* appState) {
 
 int create(std::string snapshotName, bool force, Status* appStatus, AppState* appState) {
     JSON_Object* statusData = appStatus->getData();
-    AppState::State state = (AppState::State)(int)json_object_get_number(statusData, "state");
+    AppState::State state = appState->getState();
     JSON_Array* snapshots = json_object_get_array(statusData, "snapshots");
     JSON_Array* stateParams = json_object_get_array(statusData, "state_params");
 
@@ -120,7 +125,7 @@ int create(std::string snapshotName, bool force, Status* appStatus, AppState* ap
 
 int drop(int topMostSnapshots, bool force, Status* appStatus, AppState* appState) {
     JSON_Object* statusData = appStatus->getData();
-    AppState::State state = (AppState::State)(int)json_object_get_number(statusData, "state");
+    AppState::State state = appState->getState();
     JSON_Array* stateParams = json_object_get_array(statusData, "state_params");
 
     if (not force && (state == AppState::DROP || state == AppState::MERGE ||
@@ -140,7 +145,7 @@ int drop(int topMostSnapshots, bool force, Status* appStatus, AppState* appState
 
 int merge(int topMostSnapshots, bool force, Status* appStatus, AppState* appState) {
     JSON_Object* statusData = appStatus->getData();
-    AppState::State state = (AppState::State)(int)json_object_get_number(statusData, "state");
+    AppState::State state = appState->getState();
     JSON_Array* stateParams = json_object_get_array(statusData, "state_params");
 
     if (not force && (state == AppState::DROP || state == AppState::MERGE ||
@@ -160,7 +165,7 @@ int merge(int topMostSnapshots, bool force, Status* appStatus, AppState* appStat
 
 int status(Status* appStatus, AppState* appState) {
     JSON_Object* statusData = appStatus->getData();
-    AppState::State state = (AppState::State)(int)json_object_get_number(statusData, "state");
+    AppState::State state = appState->getState();
     JSON_Array* stateParams = json_object_get_array(statusData, "state_params");
 
     std::string cmd = "mount | grep 'overlay'";

@@ -189,7 +189,7 @@ void Snapshot::computePaths() {
             std::string(json_array_get_string(this->snapshots, snapshotCount - 1));
     }
 
-    LOG_DEBUG("Snapshot: computePaths: "
+    LOG_DEBUG("Snapshot: computePaths:\n"
               << "\tlowerDir is: " << getLowerDir() << "\n"
               << "\tupperDir is: " << getUpperDir() << "\n"
               << "\tworkDir is: " << getWorkDir() << "\n"
