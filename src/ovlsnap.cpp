@@ -216,12 +216,13 @@ int main(int argc, char *argv[]) {
     // TODO: clone, compile, and package, the C++ docopt port:
     // https://github.com/docopt/docopt.cpp
 
-    std::string command = std::string(argv[1]);
+    std::string command = std::string( (argc > 1 ? argv[1] : "") );
     std::string option;
 
     // Parsing options.
 
     for (int i = 2; i < argc; i++) {
+
         option = std::string(argv[i]);
 
         if (option.compare("-f") == 0 || option.compare("--force") == 0) {
@@ -230,6 +231,11 @@ int main(int argc, char *argv[]) {
     }
 
     // Parsing commands.
+
+    if (command.compare("-h") == 0 || command.compare("--help") == 0 || command.length() == 0) {
+        printUsage();
+        return 0;
+    }
 
     if (command.compare("enable") == 0) {
         return enable(force, &appStatus, &appState);
@@ -273,8 +279,6 @@ int main(int argc, char *argv[]) {
         }
         return merge(topMostSnapshots, force, &appStatus, &appState);
 
-    } else if (command.compare("-h") == 0 || command.compare("--help") == 0) {
-        printUsage();
     }
 
     return 0;
