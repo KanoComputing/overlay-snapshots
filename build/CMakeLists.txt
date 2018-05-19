@@ -23,6 +23,7 @@ if("${BUILD_TYPE}" STREQUAL "Development")
 endif()
 
 # TODO: compile this lib to be static not dynamic.
+find_library(LIBDOCOPT_STATIC libdocopt.a)
 find_library(LIBPARSON_STATIC parson)
 
 add_executable(ovlsnap-init "${SRC}/ovlsnap-init.cpp")
@@ -39,4 +40,4 @@ target_sources(ovlsnap PUBLIC
     "${SRC}/Snapshot.cpp"
     "${SRC}/Status.cpp"
     "${SRC}/Utils.cpp")
-target_link_libraries(ovlsnap ${LIBPARSON_STATIC})
+target_link_libraries(ovlsnap ${LIBPARSON_STATIC} ${LIBDOCOPT_STATIC})

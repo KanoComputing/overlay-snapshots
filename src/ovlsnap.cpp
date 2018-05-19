@@ -12,6 +12,7 @@
 #include <string>
 #include <stdexcept>
 
+#include <docopt/docopt.h>
 #include <parson/parson.h>
 
 #include "AppState.h"
@@ -20,43 +21,40 @@
 #include "Utils.h"
 
 
-const std::string usage =
-    "Usage:\n"
-    "    ovlsnap (enable | disable) [-f]\n"
-    "    ovlsnap create <snapshot_name> [-f]\n"
-    "    ovlsnap drop <top_most_snapshots> [-f]\n"
-    "    ovlsnap merge <top_most_snapshots> [-f]\n"
-    "    ovlsnap status\n"
-    "    ovlsnap -h | --help\n"
-    "\n"
-    "Commands:\n"
-    "    enable    Enable snapshots to be mounted at boot.\n"
-    "    disable   Disable snapshots from being mounted at boot.\n"
-    "    create    Schedule the creation a new snapshot at boot. The new\n"
-    "              snapshot will be placed at the top of the stack.\n"
-    "    drop      Schedule the removal of top most snapshots at boot. This\n"
-    "              will remove any changes made in the removed snapshots.\n"
-    "    merge     Schedule the merger of snapshots at boot. This will merge\n"
-    "              all changes from the merging snapshots into the level below.\n"
-    "    status    Show the current state of the system and snapshots.\n"
-    "\n"
-    "Arguments:\n"
-    "    <snapshot_name>        (str) The name of a new snapshot.\n"
-    "    <top_most_snapshots>   (int) A number of snapshots from the top of\n"
-    "                           the stack.\n"
-    "\n"
-    "Options:\n"
-    "    -f, --force   Force the given operation (to overwrite any existing).\n"
-    "    -h, --help    Show this message.\n"
-    "\n"
-    "Examples:\n"
-    "    ovlsnap create 'layer1'\n"
-    "    ovlsnap merge 1\n";
+static const char USAGE[] = R"(
+    Usage:
+        ovlsnap (enable | disable) [-f]
+        ovlsnap create <snapshot_name> [-f]
+        ovlsnap drop <top_most_snapshots> [-f]
+        ovlsnap merge <top_most_snapshots> [-f]
+        ovlsnap status
+        ovlsnap -h | --help
 
+    Commands:
+        enable    Enable snapshots to be mounted at boot.
+        disable   Disable snapshots from being mounted at boot.
+        create    Schedule the creation a new snapshot at boot. The new
+                  snapshot will be placed at the top of the stack.
+        drop      Schedule the removal of top most snapshots at boot. This
+                  will remove any changes made in the removed snapshots.
+        merge     Schedule the merger of snapshots at boot. This will merge
+                  all changes from the merging snapshots into the level below.
+        status    Show the current state of the system and snapshots.
 
-void printUsage() {
-    std::cout << usage;
-}
+    Arguments:
+        <snapshot_name>        (str) The name of a new snapshot.
+        <top_most_snapshots>   (int) A number of snapshots from the top of
+                               the stack.
+
+    Options:
+        -f, --force   Force the given operation (to overwrite any existing).
+        -h, --help    Show this message.
+
+    Examples:
+        ovlsnap create 'layer1'
+        ovlsnap merge 1 --force
+)";
+
 
 int enable(bool force, Status* appStatus, AppState* appState) {
     JSON_Object* statusData = appStatus->getData();
@@ -201,80 +199,71 @@ int status(Status* appStatus, AppState* appState) {
     return 0;
 }
 
-int main(int argc, char *argv[]) {
+std::string verifySnapshotName(std::map<std::string, docopt::value> args) {
     std::string snapshotName;
-    int topMostSnapshots = 0;
-    bool force = false;
+    try {
+        snapshotName = args["<snapshot_name>"].asString();
+    } catch (...) {
+        std::cerr << "Invalid <snapshot_name> argument!" << std::endl;
+        std::exit(-1);
+    }
+    if (snapshotName.empty()) {
+        std::cerr << "<snapshot_name> Cannot be empty!" << std::endl;
+        std::exit(-1);
+    }
+    return snapshotName;
+}
+
+int verifyTopMostSnapshots(std::map<std::string, docopt::value> args) {
+    int topMostSnapshots = 1;
+    try {
+        topMostSnapshots = (int)args["<top_most_snapshots>"].asLong();
+    } catch (...) {
+        std::cerr << "Invalid <top_most_snapshots> argument!" << std::endl;
+        std::exit(-1);
+    }
+    if (topMostSnapshots < 1) {
+        std::cerr << "<top_most_snapshots> Must be larger than 0!" << std::endl;
+        std::exit(-1);
+    }
+    return topMostSnapshots;
+}
+
+int main(int argc, char *argv[]) {
+    // Parsing command line arguments with docopt.
+    std::map<std::string, docopt::value> args = docopt::docopt(
+        USAGE, {argv + 1, argv + argc}
+    );
+
+    std::string snapshotName;
+    int topMostSnapshots = 1;
+    bool force = args["--force"].asBool();
 
     Status appStatus = Status();
     appStatus.load();
 
     AppState appState = AppState(appStatus.getData());
 
-    // This is implemented with a chain of "if else if" because getopt_long()
-    // creates disgraceful user interfaces to a program.
-    // TODO: clone, compile, and package, the C++ docopt port:
-    // https://github.com/docopt/docopt.cpp
-
-    std::string command = std::string(argv[1]);
-    std::string option;
-
-    // Parsing options.
-
-    for (int i = 2; i < argc; i++) {
-        option = std::string(argv[i]);
-
-        if (option.compare("-f") == 0 || option.compare("--force") == 0) {
-            force = true;
-        }
-    }
-
-    // Parsing commands.
-
-    if (command.compare("enable") == 0) {
+    if (args["enable"].asBool()) {
         return enable(force, &appStatus, &appState);
 
-    } else if (command.compare("disable") == 0) {
+    } else if (args["disable"].asBool()) {
         return disable(force, &appStatus, &appState);
 
-    } else if (command.compare("status") == 0) {
+    } else if (args["status"].asBool()) {
         return status(&appStatus, &appState);
 
-    } else if (command.compare("create") == 0) {
-        try {
-            snapshotName = std::string(argv[2]);
-            if (snapshotName.empty())
-                throw std::invalid_argument("Cannot be empty!");
-        } catch (...) {
-            printUsage();
-            return 1;
-        }
+    } else if (args["create"].asBool()) {
+        snapshotName = verifySnapshotName(args);
         return create(snapshotName, force, &appStatus, &appState);
 
-    } else if (command.compare("drop") == 0) {
-        try {
-            topMostSnapshots = std::stoi(argv[2]);
-            if (topMostSnapshots < 1)
-                throw std::invalid_argument("Must be larger than 0!");
-        } catch (...) {
-            printUsage();
-            return 1;
-        }
+    } else if (args["drop"].asBool()) {
+        topMostSnapshots = verifyTopMostSnapshots(args);
         return drop(topMostSnapshots, force, &appStatus, &appState);
 
-    } else if (command.compare("merge") == 0) {
-        try {
-            topMostSnapshots = std::stoi(argv[2]);
-            if (topMostSnapshots < 1)
-                throw std::invalid_argument("Must be larger than 0!");
-        } catch (...) {
-            printUsage();
-            return 1;
-        }
+    } else if (args["merge"].asBool()) {
+        topMostSnapshots = verifyTopMostSnapshots(args);
         return merge(topMostSnapshots, force, &appStatus, &appState);
-
-    } else if (command.compare("-h") == 0 || command.compare("--help") == 0) {
-        printUsage();
     }
 
     return 0;
