@@ -1,6 +1,6 @@
 {
     "state": 0,
-    "state_params": [],
+    "scheduled_commands": [],
     "snapshots": [],
     "error_code": 0
 }

@@ -42,9 +42,9 @@ class Snapshot {
         std::string getRealDir();
 
     private:  // Members.
-        JSON_Object* statusData;
+        JSON_Object* statusData = NULL;
 
-        JSON_Array* snapshots;
+        JSON_Array* snapshots = NULL;
         std::string lowerDir;
         std::string upperDir;
 
@@ -86,4 +86,4 @@ class Snapshot {
         static constexpr const char* OVERLAY_MERGED_DIR = "merged";
 };
 
-#endif
+#endif  // __OVLSNAP_SNAPSHOT_H__

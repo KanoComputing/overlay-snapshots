@@ -23,9 +23,10 @@
 #include "Logging.h"
 
 
-Snapshot::Snapshot(JSON_Object* statusLoadedData) {
-    this->statusData = statusLoadedData;
+Snapshot::Snapshot(JSON_Object* statusLoadedData):
+    statusData(statusLoadedData) {
 
+    // TODO: Check if field is not there.
     this->snapshots = json_object_get_array(this->statusData, "snapshots");
 
     if (!createDir(Snapshot::BASE_OVERLAYS_PATH)) {
@@ -190,11 +191,11 @@ void Snapshot::computePaths() {
     }
 
     LOG_DEBUG("Snapshot: computePaths:\n"
-              << "\tlowerDir is: " << getLowerDir() << "\n"
-              << "\tupperDir is: " << getUpperDir() << "\n"
-              << "\tworkDir is: " << getWorkDir() << "\n"
-              << "\tmergedDir is: " << getMergedDir() << "\n"
-              << "\trealDir is: " << getMergedDir() + getRealDir()
+              << "  lowerDir is: " << getLowerDir() << "\n"
+              << "  upperDir is: " << getUpperDir() << "\n"
+              << "  workDir is: " << getWorkDir() << "\n"
+              << "  mergedDir is: " << getMergedDir() << "\n"
+              << "  realDir is: " << getMergedDir() + getRealDir()
     );
 }
 
