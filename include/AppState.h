@@ -17,16 +17,11 @@
 class AppState {
 
     public:  // Enums.
-        // NOTE: Do not change the order of the states below! The status file
-        // contains the current state which is a state defined below.
+        // WARNING: Do not change the order of the states below! The status
+        // file contains the current state which is a state defined below.
         enum State {
             /* 0 */ DISABLED,
-            /* 1 */ ENABLED,
-            /* 2 */ CREATE,
-            /* 3 */ DROP,
-            /* 4 */ MERGE,
-            /* 5 */ DROP_CREATE,
-            /* 6 */ MERGE_CREATE
+            /* 1 */ ENABLED
         };
 
     public:  // Methods.
@@ -37,8 +32,8 @@ class AppState {
         AppState::State getState();
 
     private:  // Members.
-        JSON_Object* statusData;
+        JSON_Object* statusData = NULL;
         AppState::State state;
 };
 
-#endif
+#endif  // __OVLSNAP_APP_STATE_H__

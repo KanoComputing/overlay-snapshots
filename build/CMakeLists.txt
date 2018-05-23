@@ -10,7 +10,7 @@ cmake_minimum_required(VERSION 3.1)
 
 project(ovlsnap)
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/../bin)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/../bin")
 set(SRC "${CMAKE_CURRENT_LIST_DIR}/../src")
 include_directories("${CMAKE_CURRENT_LIST_DIR}/../include")
 
@@ -22,22 +22,39 @@ if("${BUILD_TYPE}" STREQUAL "Development")
     set(CMAKE_CXX_FLAGS "-D_DEBUG_")
 endif()
 
-# TODO: compile this lib to be static not dynamic.
 find_library(LIBDOCOPT_STATIC libdocopt.a)
+# TODO: compile this lib to be static not dynamic.
 find_library(LIBPARSON_STATIC parson)
 
 add_executable(ovlsnap-init "${SRC}/ovlsnap-init.cpp")
 target_sources(ovlsnap-init PUBLIC
     "${SRC}/AppState.cpp"
+    "${SRC}/CommandHandler.cpp"
+    "${SRC}/Commands/CommandFactory.cpp"
+    "${SRC}/Commands/EnableCommand.cpp"
+    "${SRC}/Commands/CreateCommand.cpp"
+    "${SRC}/Commands/DropCommand.cpp"
+    "${SRC}/Commands/MergeCommand.cpp"
     "${SRC}/Snapshot.cpp"
     "${SRC}/Status.cpp"
     "${SRC}/Utils.cpp")
-target_link_libraries(ovlsnap-init ${LIBPARSON_STATIC})
+target_link_libraries(ovlsnap-init
+    ${LIBPARSON_STATIC}
+)
 
 add_executable(ovlsnap "${SRC}/ovlsnap.cpp")
 target_sources(ovlsnap PUBLIC
     "${SRC}/AppState.cpp"
+    "${SRC}/CommandScheduler.cpp"
+    "${SRC}/Commands/CommandFactory.cpp"
+    "${SRC}/Commands/EnableCommand.cpp"
+    "${SRC}/Commands/CreateCommand.cpp"
+    "${SRC}/Commands/DropCommand.cpp"
+    "${SRC}/Commands/MergeCommand.cpp"
     "${SRC}/Snapshot.cpp"
     "${SRC}/Status.cpp"
     "${SRC}/Utils.cpp")
-target_link_libraries(ovlsnap ${LIBPARSON_STATIC} ${LIBDOCOPT_STATIC})
+target_link_libraries(ovlsnap
+    ${LIBPARSON_STATIC}
+    ${LIBDOCOPT_STATIC}
+)

@@ -12,7 +12,7 @@ debug:
 	mkdir -p build/debug && \
 		cd build/debug && \
 		cmake ../ && \
-		make --jobs
+		make --jobs 4
 
 release: debug
 	# apt-get install -y binutils
@@ -23,7 +23,7 @@ dev:
 	mkdir -p build/dev && \
 		cd build/dev && \
 		cmake -D BUILD_TYPE=Development ../ && \
-		make --jobs
+		make --jobs 4
 
 clean: clean-bin clean-debug clean-dev clean-debian
 

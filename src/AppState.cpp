@@ -17,9 +17,10 @@
 #include "Logging.h"
 
 
-AppState::AppState(JSON_Object* statusLoadedData) {
-    this->statusData = statusLoadedData;
+AppState::AppState(JSON_Object* statusLoadedData):
+    statusData(statusLoadedData) {
 
+    // TODO: Check if field is not there.
     this->state = (AppState::State)(int)json_object_get_number(
         this->statusData, "state"
     );

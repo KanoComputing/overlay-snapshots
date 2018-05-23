@@ -16,156 +16,111 @@
 #include <parson/parson.h>
 
 #include "AppState.h"
+#include "CommandScheduler.h"
+#include "Commands/EnableCommand.h"
+#include "Commands/CreateCommand.h"
+#include "Commands/DropCommand.h"
+#include "Commands/MergeCommand.h"
 #include "Snapshot.h"
 #include "Status.h"
 #include "Utils.h"
 
 
-static const char USAGE[] = R"(
-    Usage:
-        ovlsnap (enable | disable) [-f]
-        ovlsnap create <snapshot_name> [-f]
-        ovlsnap drop <top_most_snapshots> [-f]
-        ovlsnap merge <top_most_snapshots> [-f]
-        ovlsnap status
-        ovlsnap -h | --help
+static const char USAGE[] =
+R"(OverlayFS Snapshots userspace tool.
 
-    Commands:
-        enable    Enable snapshots to be mounted at boot.
-        disable   Disable snapshots from being mounted at boot.
-        create    Schedule the creation a new snapshot at boot. The new
-                  snapshot will be placed at the top of the stack.
-        drop      Schedule the removal of top most snapshots at boot. This
-                  will remove any changes made in the removed snapshots.
-        merge     Schedule the merger of snapshots at boot. This will merge
-                  all changes from the merging snapshots into the level below.
-        status    Show the current state of the system and snapshots.
+Usage:
+    ovlsnap (enable | disable)
+    ovlsnap create <snapshot_name>
+    ovlsnap drop <top_most_snapshots>
+    ovlsnap merge <top_most_snapshots> [-f]
+    ovlsnap clear
+    ovlsnap status
+    ovlsnap -h | --help
 
-    Arguments:
-        <snapshot_name>        (str) The name of a new snapshot.
-        <top_most_snapshots>   (int) A number of snapshots from the top of
-                               the stack.
+Commands:
+    enable    Schedule the enabling of snapshot mounting at boot. Once enabled,
+              the created snapshots will be mounted.
+    disable   Schedule the disabling of snapshot mounting at boot. Once
+              disabled, snapshots will not be mounted.
+    create    Schedule the creation a new snapshot at boot. The new snapshot
+              will be placed at the top of the stack.
+    drop      Schedule the removal of top most snapshots at boot. This will
+              remove any changes made in the removed snapshots.
+    merge     Schedule the merger of snapshots at boot. This will merge all
+              changes from the merging snapshots into the level below.
+    clear     Remove all scheduled operations.
+    status    Show the current state of the system and snapshots.
 
-    Options:
-        -f, --force   Force the given operation (to overwrite any existing).
-        -h, --help    Show this message.
+Arguments:
+    <snapshot_name>        (str) The name of a new snapshot.
+    <top_most_snapshots>   (int) A number of snapshots from the top of
+                           the stack.
 
-    Examples:
-        ovlsnap create 'layer1'
-        ovlsnap merge 1 --force
-)";
+Options:
+    -f, --force   Force the given operation (to overwrite any existing).
+    -h, --help    Show this message.
+
+Examples:
+    ovlsnap create 'layer1'
+    ovlsnap merge 1 --force)";
 
 
-int enable(bool force, Status* appStatus, AppState* appState) {
-    JSON_Object* statusData = appStatus->getData();
-    AppState::State state = appState->getState();
-    JSON_Array* stateParams = json_object_get_array(statusData, "state_params");
+int enable(bool isEnabled, Status status) {
+    EnableCommand command = EnableCommand(isEnabled);
+    CommandScheduler scheduler = CommandScheduler(status.getData());
 
-    if (not force && (state == AppState::DROP || state == AppState::MERGE ||
-        state == AppState::CREATE)) {
+    // TODO: This might fail, implement and handle errors.
+    scheduler.schedule(command);
 
-        std::cout << "Another operation was already scheduled. Use --force"
-                  << " to override it.\n";
-        return 1;
-    }
-
-    appState->changeState(AppState::ENABLED);
-    json_array_clear(stateParams);
-    appStatus->save();
     return 0;
 }
 
-int disable(bool force, Status* appStatus, AppState* appState) {
-    JSON_Object* statusData = appStatus->getData();
-    AppState::State state = appState->getState();
-    JSON_Array* stateParams = json_object_get_array(statusData, "state_params");
+int create(std::string snapshotName, Status status) {
+    CreateCommand command = CreateCommand(snapshotName);
+    CommandScheduler scheduler = CommandScheduler(status.getData());
 
-    if (not force && (state == AppState::DROP || state == AppState::MERGE ||
-        state == AppState::CREATE)) {
+    // TODO: This might fail, implement and handle errors.
+    scheduler.schedule(command);
 
-        std::cout << "Another operation was already scheduled. Use --force"
-                  << " to override it.\n";
-        return 1;
-    }
-
-    appState->changeState(AppState::DISABLED);
-    json_array_clear(stateParams);
-    appStatus->save();
     return 0;
 }
 
-int create(std::string snapshotName, bool force, Status* appStatus, AppState* appState) {
-    JSON_Object* statusData = appStatus->getData();
-    AppState::State state = appState->getState();
-    JSON_Array* snapshots = json_object_get_array(statusData, "snapshots");
-    JSON_Array* stateParams = json_object_get_array(statusData, "state_params");
+int drop(int topMostSnapshots, Status status) {
+    DropCommand command = DropCommand(topMostSnapshots);
+    CommandScheduler scheduler = CommandScheduler(status.getData());
 
-    if (jsonArrayContainsString(snapshots, snapshotName)) {
-        std::cout << "Snapshot already exists!\n";
-        return 1;
-    }
+    // TODO: This might fail, implement and handle errors.
+    scheduler.schedule(command);
 
-    if (not force && (state == AppState::DROP || state == AppState::MERGE ||
-        state == AppState::CREATE)) {
-
-        std::cout << "Another operation was already scheduled. Use --force"
-                  << " to override it.\n";
-        return 1;
-    }
-
-    appState->changeState(AppState::CREATE);
-    json_array_clear(stateParams);
-    json_array_append_string(stateParams, snapshotName.c_str());
-
-    appStatus->save();
     return 0;
 }
 
-int drop(int topMostSnapshots, bool force, Status* appStatus, AppState* appState) {
-    JSON_Object* statusData = appStatus->getData();
-    AppState::State state = appState->getState();
-    JSON_Array* stateParams = json_object_get_array(statusData, "state_params");
-
-    if (not force && (state == AppState::DROP || state == AppState::MERGE ||
-        state == AppState::CREATE)) {
-
-        std::cout << "Another operation was already scheduled. Use --force"
-                  << " to override it.\n";
-        return 1;
+int merge(int topMostSnapshots, bool force, Status status) {
+    // TODO: Remove this once it's been deemed safe.
+    if (!force) {
+        std::cout << "WARNING: This feature is unstable and may break your system!\n";
+        std::cout << "Run with --force to use it anyway.\n";
+        return -2;
     }
 
-    appState->changeState(AppState::DROP);
-    json_array_clear(stateParams);
-    json_array_append_number(stateParams, topMostSnapshots);
-    appStatus->save();
+    MergeCommand command = MergeCommand(topMostSnapshots);
+    CommandScheduler scheduler = CommandScheduler(status.getData());
+
+    // TODO: This might fail, implement and handle errors.
+    scheduler.schedule(command);
+
     return 0;
 }
 
-int merge(int topMostSnapshots, bool force, Status* appStatus, AppState* appState) {
-    JSON_Object* statusData = appStatus->getData();
-    AppState::State state = appState->getState();
-    JSON_Array* stateParams = json_object_get_array(statusData, "state_params");
+int clear(Status status) {
+    CommandScheduler scheduler = CommandScheduler(status.getData());
+    scheduler.clear();
 
-    if (not force && (state == AppState::DROP || state == AppState::MERGE ||
-        state == AppState::CREATE)) {
-
-        std::cout << "Another operation was already scheduled. Use --force"
-                  << " to override it.\n";
-        return 1;
-    }
-
-    appState->changeState(AppState::MERGE);
-    json_array_clear(stateParams);
-    json_array_append_number(stateParams, topMostSnapshots);
-    appStatus->save();
     return 0;
 }
 
-int status(Status* appStatus, AppState* appState) {
-    JSON_Object* statusData = appStatus->getData();
-    AppState::State state = appState->getState();
-    JSON_Array* stateParams = json_object_get_array(statusData, "state_params");
-
+int status(Status status) {
     std::string cmd = "mount | grep 'overlay'";
     std::string result;
 
@@ -177,25 +132,10 @@ int status(Status* appStatus, AppState* appState) {
         std::cout << "No overlays are mounted.\n";
     }
 
-    Snapshot(statusData).status();
+    // AppState(appStatus.getData()).status();
+    Snapshot(status.getData()).status();
+    CommandScheduler(status.getData()).status();
 
-    if (state == AppState::CREATE) {
-        std::string snapshotName = json_array_get_string(stateParams, 0);
-        std::cout << "Create snapshot '" << snapshotName << "' operation scheduled.\n"
-                  << "Reboot is required for changes to take effect.\n";
-
-    } else if (state == AppState::DROP) {
-        int topMostSnapshots = json_array_get_number(stateParams, 0);
-        std::cout << "Drop top most " << topMostSnapshots << " snapshots"
-                  << " operation scheduled.\nReboot is required for changes to"
-                  << " take effect.\n";
-
-    } else if (state == AppState::MERGE) {
-        int topMostSnapshots = json_array_get_number(stateParams, 0);
-        std::cout << "Merge top most " << topMostSnapshots << " snapshots"
-                  << " operation scheduled.\nReboot is required for changes to"
-                  << " take effect.\n";
-    }
     return 0;
 }
 
@@ -235,6 +175,7 @@ int main(int argc, char *argv[]) {
         USAGE, {argv + 1, argv + argc}
     );
 
+    int rc = 0;
     std::string snapshotName;
     int topMostSnapshots = 1;
     bool force = args["--force"].asBool();
@@ -242,29 +183,33 @@ int main(int argc, char *argv[]) {
     Status appStatus = Status();
     appStatus.load();
 
-    AppState appState = AppState(appStatus.getData());
-
     if (args["enable"].asBool()) {
-        return enable(force, &appStatus, &appState);
+        rc = enable(true, appStatus);
 
     } else if (args["disable"].asBool()) {
-        return disable(force, &appStatus, &appState);
-
-    } else if (args["status"].asBool()) {
-        return status(&appStatus, &appState);
+        rc = enable(false, appStatus);
 
     } else if (args["create"].asBool()) {
         snapshotName = verifySnapshotName(args);
-        return create(snapshotName, force, &appStatus, &appState);
+        rc = create(snapshotName, appStatus);
 
     } else if (args["drop"].asBool()) {
         topMostSnapshots = verifyTopMostSnapshots(args);
-        return drop(topMostSnapshots, force, &appStatus, &appState);
+        rc = drop(topMostSnapshots, appStatus);
 
     } else if (args["merge"].asBool()) {
         topMostSnapshots = verifyTopMostSnapshots(args);
-        return merge(topMostSnapshots, force, &appStatus, &appState);
+        rc = merge(topMostSnapshots, force, appStatus);
+
+    } else if (args["clear"].asBool()) {
+        rc = clear(appStatus);
+
+    } else if (args["status"].asBool()) {
+        rc = status(appStatus);
+
     }
 
-    return 0;
+    appStatus.save();
+
+    return rc;
 }

@@ -17,6 +17,8 @@
 #include <stdexcept>
 
 #include "AppState.h"
+#include "CommandHandler.h"
+#include "Logging.h"
 #include "Snapshot.h"
 #include "Status.h"
 
@@ -44,34 +46,35 @@ int mountOverlays(std::string lowerDir, std::string upperDir, std::string merged
         std::string("/bin/busybox mount -t overlay overlay -o") +
         std::string(" lowerdir=") + lowerDir + std::string(",upperdir=") + upperDir + std::string(",workdir=") + workDir +
         std::string(" ") + mergedDir;
-    std::cout << "mountOverlays: cmd is: " << cmd << "\n";
+    LOG_DEBUG("ovlsnap-init: mountOverlays: cmd is: " << cmd);
     return system(cmd.c_str());
 }
 
 void pivotAndChroot(std::string mergedDir, std::string realDir) {
-    std::cout << "pivotAndChroot: Executing..\n";
+    LOG_DEBUG("ovlsnap-init: pivotAndChroot: Executing..");
     chdir(mergedDir.c_str());
     syscall(SYS_pivot_root, ".", realDir.c_str());
     chroot(".");
 }
 
 void sysInit() {
-    std::cout << "sysInit: Executing..\n";
+    LOG_DEBUG("ovlsnap-init: sysInit: Executing..");
     char const * const args[] = {"/sbin/init", NULL};
     execv(args[0], (char**)args);
 }
 
 int main(int argc, char *argv[]) {
+    LOG_DEBUG("ovlsnap-init: Hello World!");
+
     int rc = 0;
 
     try {
         rc = std::atexit(sysInit);
         if (rc != 0) {
             sysInit();
-            return 1;  // TODO: Set error in Status instead?
+            rc = 1;  // TODO: Set error in Status instead.
+            goto end;
         }
-
-        std::cout << "Hello World!\n";
 
         mountDevs();
 
@@ -81,81 +84,32 @@ int main(int argc, char *argv[]) {
         AppState state = AppState(status.getData());
         Snapshot snapshot = Snapshot(status.getData());
 
-        JSON_Array* stateParams = json_object_get_array(
-            status.getData(), "state_params"
-        );
-        std::string snapshotName;
-        int topMostCount;
+        CommandHandler(status.getData()).executeAll(&state, &snapshot);
+        status.save();
 
         switch (state.getState()) {
             case AppState::DISABLED:
                 unmountDevs();
-                return 0;
-                break;
+                goto end;
 
             case AppState::ENABLED:
-                break;  // Nothing to do here.
-
-            case AppState::CREATE:
-                snapshotName = json_array_get_string(stateParams, 0);
-                json_array_clear(stateParams);
-
-                if (snapshot.create(snapshotName)) {
-                    state.changeState(AppState::ENABLED);
-                    status.save();
-                } else {
+                rc = mountOverlays(
+                    snapshot.getLowerDir(),
+                    snapshot.getUpperDir(),
+                    snapshot.getMergedDir(),
+                    snapshot.getWorkDir()
+                );
+                if (rc != 0) {
                     unmountDevs();
-                    return 1;
+                    rc = 2;  // TODO: Set error in Status instead.
+                    goto end;
                 }
-                break;
+                unmountProc();
 
-            case AppState::DROP:
-                topMostCount = json_array_get_number(stateParams, 0);
-                json_array_clear(stateParams);
-
-                if (snapshot.drop(topMostCount)) {
-                    if (snapshot.getSnapshotsCount() > 0) {
-                        state.changeState(AppState::ENABLED);
-                        status.save();
-                    } else {
-                        state.changeState(AppState::DISABLED);
-                        status.save();
-                        unmountDevs();
-                        return 0;
-                    }
-                } else {
-                    unmountDevs();
-                    return 1;
-                }
-                break;
-
-            case AppState::MERGE:
-                topMostCount = json_array_get_number(stateParams, 0);
-                json_array_clear(stateParams);
-
-                if (snapshot.merge(topMostCount)) {
-                    if (snapshot.getSnapshotsCount() > 0) {
-                        state.changeState(AppState::ENABLED);
-                        status.save();
-                    } else {
-                        state.changeState(AppState::DISABLED);
-                        status.save();
-                        unmountDevs();
-                        return 0;
-                    }
-                } else {
-                    unmountDevs();
-                    return 1;
-                }
-                break;
-
-            case AppState::DROP_CREATE:
-                // TODO
-                break;
-
-            case AppState::MERGE_CREATE:
-                // TODO
-                break;
+                pivotAndChroot(
+                    snapshot.getMergedDir(),
+                    snapshot.getMergedDir() + snapshot.getRealDir()
+                );
 
             default:
                 throw std::invalid_argument(
@@ -164,28 +118,11 @@ int main(int argc, char *argv[]) {
                     std::string(" received!")
                 );
         }
-
-        rc = mountOverlays(
-            snapshot.getLowerDir(),
-            snapshot.getUpperDir(),
-            snapshot.getMergedDir(),
-            snapshot.getWorkDir()
-        );
-        if (rc != 0) {
-            unmountDevs();
-            return 1;
-        }
-        unmountProc();
-
-        pivotAndChroot(
-            snapshot.getMergedDir(),
-            snapshot.getMergedDir() + snapshot.getRealDir()
-        );
-
     } catch (...) {
-        std::cout << "main: Error occured!\n";
+        LOG_ERROR("ovlsnap-init: Error occured!");
     }
 
+  end:
     // The final step sysInit() will be called by atexit here.
-    return 0;
+    return rc;
 }
