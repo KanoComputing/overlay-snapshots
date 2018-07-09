@@ -18,8 +18,6 @@ Status::Status() {
 }
 
 Status::~Status() {
-    // TODO: This causes a double free exception?
-    // json_value_free(this->data);
 }
 
 void Status::load() {

@@ -26,35 +26,35 @@ find_library(LIBDOCOPT_STATIC libdocopt.a)
 # TODO: compile this lib to be static not dynamic.
 find_library(LIBPARSON_STATIC parson)
 
-add_executable(ovlsnap-init "${SRC}/ovlsnap-init.cpp")
-target_sources(ovlsnap-init PUBLIC
-    "${SRC}/AppState.cpp"
-    "${SRC}/CommandHandler.cpp"
+# Create a list of all source files.
+set(OVLSNAP_SRC
     "${SRC}/Commands/CommandFactory.cpp"
-    "${SRC}/Commands/EnableCommand.cpp"
     "${SRC}/Commands/CreateCommand.cpp"
     "${SRC}/Commands/DropCommand.cpp"
+    "${SRC}/Commands/EnableCommand.cpp"
     "${SRC}/Commands/MergeCommand.cpp"
+    "${SRC}/AppState.cpp"
+    "${SRC}/CommandHandler.cpp"
+    "${SRC}/CommandScheduler.cpp"
     "${SRC}/Snapshot.cpp"
     "${SRC}/Status.cpp"
-    "${SRC}/Utils.cpp")
+    "${SRC}/Utils.cpp"
+)
+
+# Create a library from all sources files.
+add_library(ovlsnapstatic STATIC "${OVLSNAP_SRC}")
+
+# Create the init wrapper executable.
+add_executable(ovlsnap-init "${SRC}/ovlsnap-init.cpp")
 target_link_libraries(ovlsnap-init
+    ovlsnapstatic
     ${LIBPARSON_STATIC}
 )
 
+# Create the userspace executable.
 add_executable(ovlsnap "${SRC}/ovlsnap.cpp")
-target_sources(ovlsnap PUBLIC
-    "${SRC}/AppState.cpp"
-    "${SRC}/CommandScheduler.cpp"
-    "${SRC}/Commands/CommandFactory.cpp"
-    "${SRC}/Commands/EnableCommand.cpp"
-    "${SRC}/Commands/CreateCommand.cpp"
-    "${SRC}/Commands/DropCommand.cpp"
-    "${SRC}/Commands/MergeCommand.cpp"
-    "${SRC}/Snapshot.cpp"
-    "${SRC}/Status.cpp"
-    "${SRC}/Utils.cpp")
 target_link_libraries(ovlsnap
-    ${LIBPARSON_STATIC}
+    ovlsnapstatic
     ${LIBDOCOPT_STATIC}
+    ${LIBPARSON_STATIC}
 )
