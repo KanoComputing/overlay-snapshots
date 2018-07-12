@@ -1,5 +1,12 @@
 {
-    "scheduled_commands": [],
+    "scheduledCommands": [],
     "snapshots": [],
-    "error_code": 0
+    "commitTree": {
+        "commits": {},
+        "branches": {},
+        "headId": "",
+        "branchId": "",
+        "idCounter": 0
+    },
+    "errorCode": 0
 }

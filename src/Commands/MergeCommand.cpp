@@ -17,7 +17,7 @@
 #include "Commands/ICommand.h"
 #include "Commands/MergeCommand.h"
 #include "Logging.h"
-#include "Snapshot.h"
+#include "SnapshotManager.h"
 
 
 MergeCommand::MergeCommand():
@@ -40,16 +40,21 @@ MergeCommand::~MergeCommand() {
 bool MergeCommand::initialise(JSON_Value* serialisedData) {
     JSON_Object* jsonObject = json_value_get_object(serialisedData);
 
-    // TODO: Update the Kano libparson to get these:
-    // if (!json_object_has_value_of_type(jsonObject, "id", JSONNumber)) {
-    //     return false;
-    // }
-    // if (json_object_get_number(jsonObject, "id") != ICommand::MERGE) {
-    //     return false;
-    // }
-    // if (!json_object_has_value_of_type(jsonObject, "top_most_snapshots", JSONNumber)) {
-    //     return false;
-    // }
+    if (!json_object_has_value_of_type(jsonObject, "id", JSONNumber)) {
+        LOG_ERROR("MergeCommand: initialise: serialisedData does not contain a"
+                  << " 'id' field with a JSONNumber value!");
+        return false;
+    }
+    if (json_object_get_number(jsonObject, "id") != CommandFactory::MERGE) {
+        LOG_ERROR("MergeCommand: initialise: serialisedData is not for a"
+                  << " MERGE command!");
+        return false;
+    }
+    if (!json_object_has_value_of_type(jsonObject, "top_most_snapshots", JSONNumber)) {
+        LOG_ERROR("MergeCommand: initialise: serialisedData does not contain a"
+                  << " 'top_most_snapshots' field with a JSONNumber value!");
+        return false;
+    }
 
     this->topMostSnapshots = json_object_get_number(jsonObject, "top_most_snapshots");
 }
@@ -64,10 +69,10 @@ JSON_Value* MergeCommand::serialise() {
     return root;
 }
 
-bool MergeCommand::execute(Snapshot* snapshot) {
+bool MergeCommand::execute(SnapshotManager* snapshotManager) {
     LOG_DEBUG("MergeCommand: execute: Called");
 
-    snapshot->merge(this->topMostSnapshots);
+    snapshotManager->merge(this->topMostSnapshots);
 }
 
 unsigned int MergeCommand::getId() {

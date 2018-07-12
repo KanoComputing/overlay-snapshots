@@ -15,7 +15,7 @@
 
 #include "Commands/CommandFactory.h"
 #include "Commands/ICommand.h"
-#include "Snapshot.h"
+#include "SnapshotManager.h"
 
 
 class CommandHandler {
@@ -24,7 +24,7 @@ class CommandHandler {
         CommandHandler(JSON_Object* statusLoadedData);
         ~CommandHandler();
 
-        void executeAll(Snapshot* snapshot);
+        void executeAll(SnapshotManager* snapshot);
 
     private:  // Members.
         JSON_Object* statusData = NULL;

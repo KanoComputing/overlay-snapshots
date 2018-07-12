@@ -19,13 +19,19 @@
 #include <parson/parson.h>
 
 
+// JSON Parson additions.
 bool jsonArrayContainsString(JSON_Array* jsonArray, std::string someString);
 
+// Shell.
 std::string runCmd(const char* cmd);
+
+// Filesystem.
 bool createDir(const char* path);
+bool dirExists(const char* path);
 std::string readFileContents(std::string path);
 bool writeFileContents(std::string contents, std::string path);
 
+// OverlayFS.
 mode_t permission_bits(const struct stat *status);
 mode_t file_type(const struct stat *status);
 bool is_whiteout(const struct stat *status);

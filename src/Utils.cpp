@@ -12,6 +12,7 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <array>
+#include <chrono>
 #include <fstream>
 #include <iostream>
 #include <memory>
@@ -67,6 +68,17 @@ bool createDir(const char* path) {
         return false;
     }
     return true;
+}
+
+bool dirExists(const char* path) {
+    struct stat info;
+    if (stat(path, &info) != 0) {
+        return false;
+    } else if (info.st_mode & S_IFDIR) {
+        return true;
+    } else {
+        return false;
+    }
 }
 
 std::string readFileContents(std::string path) {

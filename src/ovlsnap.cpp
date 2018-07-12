@@ -8,6 +8,7 @@
  */
 
 
+#include <time.h>
 #include <iostream>
 #include <string>
 #include <stdexcept>
@@ -15,12 +16,14 @@
 #include <docopt/docopt.h>
 #include <parson/parson.h>
 
-#include "AppState.h"
-#include "CommandScheduler.h"
+#include "Commands/BranchCommand.h"
 #include "Commands/CreateCommand.h"
 #include "Commands/DropCommand.h"
 #include "Commands/MergeCommand.h"
-#include "Snapshot.h"
+#include "Snapshot/CommitTree.h"
+#include "AppState.h"
+#include "CommandScheduler.h"
+#include "SnapshotManager.h"
 #include "Status.h"
 #include "Utils.h"
 
@@ -32,41 +35,54 @@ Usage:
     ovlsnap (enable | disable)
     ovlsnap create <snapshot_name>
     ovlsnap drop <top_most_snapshots>
-    ovlsnap merge <top_most_snapshots> [-f]
+    ovlsnap branch <branch_name> [-c | -D]
     ovlsnap clear
     ovlsnap status
     ovlsnap -h | --help
 
 Commands:
-    enable    Enable the execution of ovlsnap-init at boot to execute any
-              scheduled and mounting operations.
-    disable   Disable the execution of ovlsnap-init at boot and make the
-              programs passive.
-    create    Schedule the creation a new snapshot at boot. The new snapshot
-              will be placed at the top of the stack.
-    drop      Schedule the removal of top most snapshots at boot. This will
-              remove any changes made in the removed snapshots.
-    merge     Schedule the merger of snapshots at boot. This will merge all
-              changes from the merging snapshots into the level below.
-    clear     Remove all scheduled operations.
-    status    Show the current state of the system and snapshots.
+    enable
+        Enable the execution of ovlsnap-init at boot to execute any
+        scheduled and mounting operations.
+    disable
+        Disable the execution of ovlsnap-init at boot and make the
+        programs passive.
+    create
+        Schedule the creation a new snapshot on the current branch at boot.
+        The new snapshot will be placed at the top of the stack.
+    drop
+        Schedule the removal of top most snapshots on the current branch at boot.
+        This will remove any changes made in the removed snapshots.
+    branch
+        Schedule the creation or removal of a branch of snapshots
+        at boot from the current HEAD.
+    clear
+        Remove all scheduled operations.
+    status
+        Show the current state of the system and snapshots.
 
 Arguments:
-    <snapshot_name>        (str) The name of a new snapshot.
-    <top_most_snapshots>   (int) A number of snapshots from the top of
-                           the stack.
+    <snapshot_name>       (str) The name of a new snapshot.
+    <top_most_snapshots>  (int) A number of snapshots from the top of the stack.
+    <branch_name>         (str) The name of a branch of snapshots.
 
 Options:
-    -f, --force   Force the given operation (to overwrite any existing).
-    -h, --help    Show this message.
+    -c, --checkout  Switch to the new or existing snapshot branch.
+    -D, --delete    Delete the specified snapshot branch.
+    -h, --help      Show this message.
 
 Examples:
     ovlsnap create 'layer1'
-    ovlsnap merge 1 --force)";
+        Create a new snapshot named 'layer1' on the current branch.
+    ovlsnap drop 2
+        Remove the 2 top most snapshots on the current branch.
+    ovlsnap branch 'dev' --checkout
+        Create a new snapshot branch named 'dev' and switch to it.
+    ovlsnap branch 'master' --delete
+        Remove the snapshot branch named 'master' and all snapshots on it.)";
 
 
 int enable(bool isEnabled) {
-
     // TODO: This might fail, implement and handle errors.
     if (isEnabled) {
         AppState().enable();
@@ -78,8 +94,8 @@ int enable(bool isEnabled) {
 }
 
 int create(std::string snapshotName, Status status) {
-    CreateCommand command = CreateCommand(snapshotName);
-    CommandScheduler scheduler = CommandScheduler(status.getData());
+    CreateCommand command(snapshotName);
+    CommandScheduler scheduler(status.getData());
 
     // TODO: This might fail, implement and handle errors.
     scheduler.schedule(command);
@@ -88,8 +104,8 @@ int create(std::string snapshotName, Status status) {
 }
 
 int drop(int topMostSnapshots, Status status) {
-    DropCommand command = DropCommand(topMostSnapshots);
-    CommandScheduler scheduler = CommandScheduler(status.getData());
+    DropCommand command(topMostSnapshots);
+    CommandScheduler scheduler(status.getData());
 
     // TODO: This might fail, implement and handle errors.
     scheduler.schedule(command);
@@ -97,25 +113,28 @@ int drop(int topMostSnapshots, Status status) {
     return 0;
 }
 
-int merge(int topMostSnapshots, bool force, Status status) {
-    // TODO: Remove this once it's been deemed safe.
-    if (!force) {
-        std::cout << "WARNING: This feature is unstable and may break your system!\n";
-        std::cout << "Run with --force to use it anyway.\n";
-        return -2;
-    }
-
-    MergeCommand command = MergeCommand(topMostSnapshots);
-    CommandScheduler scheduler = CommandScheduler(status.getData());
+int merge(int topMostSnapshots, Status status) {
+    MergeCommand command(topMostSnapshots);
+    CommandScheduler scheduler(status.getData());
 
     // TODO: This might fail, implement and handle errors.
+    scheduler.schedule(command);
+
+    return 0;
+}
+
+int branch(std::string branchName, bool checkout, bool branchDelete, Status status) {
+    BranchCommand command(branchName, checkout, branchDelete);
+    CommandScheduler scheduler(status.getData());
+
+    // TODO: The above might fail. Implement and handle errors.
     scheduler.schedule(command);
 
     return 0;
 }
 
 int clear(Status status) {
-    CommandScheduler scheduler = CommandScheduler(status.getData());
+    CommandScheduler scheduler(status.getData());
     scheduler.clear();
 
     return 0;
@@ -123,18 +142,20 @@ int clear(Status status) {
 
 int status(Status status) {
     AppState().status();
-    Snapshot(status.getData()).status();
+    SnapshotManager(status.getData()).status();
     CommandScheduler(status.getData()).status();
+    CommitTree(status.getData()).status();
 
+    // TODO: Reimplement this without a system call or remove entirely.
     std::string cmd = "mount | grep 'overlay'";
     std::string result;
 
     result = runCmd(cmd.c_str());
     if (!result.empty()) {
-        std::cout << "Overlays are mounted:\n";
+        std::cout << "Overlays are mounted:" << std::endl;
         std::cout << result;
     } else {
-        std::cout << "No overlays are mounted.\n";
+        std::cout << "No overlays are mounted." << std::endl;
     }
 
     return 0;
@@ -170,6 +191,21 @@ int verifyTopMostSnapshots(std::map<std::string, docopt::value> args) {
     return topMostSnapshots;
 }
 
+std::string verifyBranchName(std::map<std::string, docopt::value> args) {
+    std::string branchName;
+    try {
+        branchName = args["<branch_name>"].asString();
+    } catch (...) {
+        std::cerr << "Invalid <branch_name> argument!" << std::endl;
+        std::exit(-1);
+    }
+    if (branchName.empty()) {
+        std::cerr << "<branch_name> Cannot be empty!" << std::endl;
+        std::exit(-1);
+    }
+    return branchName;
+}
+
 int main(int argc, char *argv[]) {
     // Parsing command line arguments with docopt.
     std::map<std::string, docopt::value> args = docopt::docopt(
@@ -181,10 +217,12 @@ int main(int argc, char *argv[]) {
 
     int rc = 0;
     std::string snapshotName;
+    std::string branchName;
     int topMostSnapshots = 1;
-    bool force = args["--force"].asBool();
+    bool checkout = args["--checkout"].asBool();
+    bool branchDelete = args["--delete"].asBool();
 
-    Status appStatus = Status();
+    Status appStatus;
     appStatus.load();
 
     if (args["enable"].asBool()) {
@@ -200,10 +238,14 @@ int main(int argc, char *argv[]) {
     } else if (args["drop"].asBool()) {
         topMostSnapshots = verifyTopMostSnapshots(args);
         rc = drop(topMostSnapshots, appStatus);
-
+    /* TODO: Enable this once the feature is adapted for CommitTree.
     } else if (args["merge"].asBool()) {
         topMostSnapshots = verifyTopMostSnapshots(args);
-        rc = merge(topMostSnapshots, force, appStatus);
+        rc = merge(topMostSnapshots, appStatus);
+    */
+    } else if (args["branch"].asBool()) {
+        branchName = verifyBranchName(args);
+        rc = branch(branchName, checkout, branchDelete, appStatus);
 
     } else if (args["clear"].asBool()) {
         rc = clear(appStatus);

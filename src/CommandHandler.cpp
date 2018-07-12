@@ -14,7 +14,7 @@
 #include "Commands/ICommand.h"
 #include "Commands/CommandFactory.h"
 #include "Logging.h"
-#include "Snapshot.h"
+#include "SnapshotManager.h"
 
 
 CommandHandler::CommandHandler(JSON_Object* statusLoadedData):
@@ -22,14 +22,14 @@ CommandHandler::CommandHandler(JSON_Object* statusLoadedData):
 
     // TODO: Check if field is not there.
     this->scheduledCommands = json_object_get_array(
-        this->statusData, "scheduled_commands"
+        this->statusData, "scheduledCommands"
     );
 }
 
 CommandHandler::~CommandHandler() {
 }
 
-void CommandHandler::executeAll(Snapshot* snapshot) {
+void CommandHandler::executeAll(SnapshotManager* snapshot) {
     int commandsCount = json_array_get_count(this->scheduledCommands);
 
     ICommand* command;

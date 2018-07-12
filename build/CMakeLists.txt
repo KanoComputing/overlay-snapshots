@@ -29,13 +29,19 @@ find_library(LIBPARSON_STATIC parson)
 # Create a list of all source files.
 set(OVLSNAP_SRC
     "${SRC}/Commands/CommandFactory.cpp"
+    "${SRC}/Commands/BranchCommand.cpp"
     "${SRC}/Commands/CreateCommand.cpp"
     "${SRC}/Commands/DropCommand.cpp"
     "${SRC}/Commands/MergeCommand.cpp"
+    "${SRC}/Snapshot/Branch.cpp"
+    "${SRC}/Snapshot/Commit.cpp"
+    "${SRC}/Snapshot/CommitTree.cpp"
+    "${SRC}/Snapshot/CommitTreeIterator.cpp"
+    "${SRC}/Snapshot/Snapshot.cpp"
     "${SRC}/AppState.cpp"
     "${SRC}/CommandHandler.cpp"
     "${SRC}/CommandScheduler.cpp"
-    "${SRC}/Snapshot.cpp"
+    "${SRC}/SnapshotManager.cpp"
     "${SRC}/Status.cpp"
     "${SRC}/Utils.cpp"
 )

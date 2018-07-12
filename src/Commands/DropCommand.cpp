@@ -17,7 +17,7 @@
 #include "Commands/DropCommand.h"
 #include "Commands/ICommand.h"
 #include "Logging.h"
-#include "Snapshot.h"
+#include "SnapshotManager.h"
 
 
 DropCommand::DropCommand():
@@ -41,16 +41,21 @@ DropCommand::~DropCommand() {
 bool DropCommand::initialise(JSON_Value* serialisedData) {
     JSON_Object* jsonObject = json_value_get_object(serialisedData);
 
-    // TODO: Update the Kano libparson to get these:
-    // if (!json_object_has_value_of_type(jsonObject, "id", JSONNumber)) {
-    //     return false;
-    // }
-    // if (json_object_get_number(jsonObject, "id") != ICommand::DROP) {
-    //     return false;
-    // }
-    // if (!json_object_has_value_of_type(jsonObject, "top_most_snapshots", JSONNumber)) {
-    //     return false;
-    // }
+    if (!json_object_has_value_of_type(jsonObject, "id", JSONNumber)) {
+        LOG_ERROR("DropCommand: initialise: serialisedData does not contain a"
+                  << " 'id' field with a JSONNumber value!");
+        return false;
+    }
+    if (json_object_get_number(jsonObject, "id") != CommandFactory::DROP) {
+        LOG_ERROR("DropCommand: initialise: serialisedData is not for a"
+                  << " DROP command!");
+        return false;
+    }
+    if (!json_object_has_value_of_type(jsonObject, "top_most_snapshots", JSONNumber)) {
+        LOG_ERROR("DropCommand: initialise: serialisedData does not contain a"
+                  << " 'top_most_snapshots' field with a JSONNumber value!");
+        return false;
+    }
 
     this->topMostSnapshots = json_object_get_number(jsonObject, "top_most_snapshots");
 }
@@ -65,10 +70,10 @@ JSON_Value* DropCommand::serialise() {
     return root;
 }
 
-bool DropCommand::execute(Snapshot* snapshot) {
+bool DropCommand::execute(SnapshotManager* snapshotManager) {
     LOG_DEBUG("DropCommand: execute: Called");
 
-    snapshot->drop(this->topMostSnapshots);
+    snapshotManager->drop(this->topMostSnapshots);
 }
 
 unsigned int DropCommand::getId() {

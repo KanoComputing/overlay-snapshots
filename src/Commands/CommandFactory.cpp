@@ -15,6 +15,7 @@
 #include "Commands/CreateCommand.h"
 #include "Commands/DropCommand.h"
 #include "Commands/MergeCommand.h"
+#include "Commands/BranchCommand.h"
 #include "Logging.h"
 
 
@@ -30,6 +31,9 @@ CommandFactory::~CommandFactory() {
     }
     if (this->mergeCommand != NULL) {
         delete this->mergeCommand;
+    }
+    if (this->branchCommand != NULL) {
+        delete this->branchCommand;
     }
 }
 
@@ -72,6 +76,13 @@ ICommand* CommandFactory::getCommandById(int id) {
             }
             LOG_DEBUG("CommandFactory: getCommandById: command is MergeCommand");
             return this->mergeCommand;
+
+        case CommandFactory::BRANCH:
+            if (this->branchCommand == NULL) {
+                this->branchCommand = new BranchCommand();
+            }
+            LOG_DEBUG("CommandFactory: getCommandById: command is BranchCommand");
+            return this->branchCommand;
     }
     return NULL;
 }

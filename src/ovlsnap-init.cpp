@@ -77,19 +77,19 @@ int main(int argc, char *argv[]) {
 
         mountDevs();
 
-        Status status = Status();
+        Status status;
         status.load();
 
-        Snapshot snapshot = Snapshot(status.getData());
+        SnapshotManager snapshotManager(status.getData());
 
-        CommandHandler(status.getData()).executeAll(&snapshot);
+        CommandHandler(status.getData()).executeAll(&snapshotManager);
         status.save();
 
         rc = mountOverlays(
-            snapshot.getLowerDir(),
-            snapshot.getUpperDir(),
-            snapshot.getMergedDir(),
-            snapshot.getWorkDir()
+            snapshotManager.getLowerDir(),
+            snapshotManager.getUpperDir(),
+            snapshotManager.getMergedDir(),
+            snapshotManager.getWorkDir()
         );
         if (rc != 0) {
             unmountDevs();
@@ -99,8 +99,8 @@ int main(int argc, char *argv[]) {
         unmountProc();
 
         pivotAndChroot(
-            snapshot.getMergedDir(),
-            snapshot.getMergedDir() + snapshot.getRealDir()
+            snapshotManager.getMergedDir(),
+            snapshotManager.getMergedDir() + snapshotManager.getRealDir()
         );
 
     } catch (...) {

@@ -75,9 +75,9 @@ bool AppState::isEnabled() {
 
 void AppState::status() {
     if (this->isEnabled()) {
-        std::cout << "ovlsnap-init is enabled and will run on the next boot.\n";
+        std::cout << "ovlsnap-init is enabled and will run on the next boot." << std::endl;
     } else {
-        std::cout << "ovlsnap-init is disabled and will not run on the next boot.\n";
+        std::cout << "ovlsnap-init is disabled and will not run on the next boot." << std::endl;
     }
 }
 

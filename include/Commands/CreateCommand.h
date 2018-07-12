@@ -16,7 +16,7 @@
 #include <parson/parson.h>
 
 #include "Commands/ICommand.h"
-#include "Snapshot.h"
+#include "SnapshotManager.h"
 
 
 class CreateCommand: public ICommand {
@@ -31,7 +31,7 @@ class CreateCommand: public ICommand {
         JSON_Value* serialise();
 
         // Implement ICommand:
-        bool execute(Snapshot* snapshot);
+        bool execute(SnapshotManager* snapshotManager);
         unsigned int getId();
         std::string toString();
 

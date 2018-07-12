@@ -17,6 +17,7 @@
 #include "Commands/CreateCommand.h"
 #include "Commands/DropCommand.h"
 #include "Commands/MergeCommand.h"
+#include "Commands/BranchCommand.h"
 
 
 class CommandFactory {
@@ -27,7 +28,8 @@ class CommandFactory {
         enum CommandType {
             /* 0 */ CREATE,
             /* 1 */ DROP,
-            /* 2 */ MERGE
+            /* 2 */ MERGE,
+            /* 3 */ BRANCH,
         };
 
     public:  // Methods.
@@ -41,6 +43,7 @@ class CommandFactory {
         CreateCommand* createCommand = NULL;
         DropCommand* dropCommand = NULL;
         MergeCommand* mergeCommand = NULL;
+        BranchCommand* branchCommand = NULL;
 };
 
 #endif  // __OVLSNAP_COMMAND_FACTORY_H__

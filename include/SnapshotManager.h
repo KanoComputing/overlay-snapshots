@@ -1,5 +1,5 @@
 /**
- * Snapshot.h
+ * SnapshotManager.h
  *
  * Copyright (C) 2018 Kano Computing Ltd.
  * License: http://www.gnu.org/licenses/gpl-2.0.txt GNU GPL v2
@@ -8,12 +8,16 @@
  */
 
 
-#ifndef __OVLSNAP_SNAPSHOT_H__
-#define __OVLSNAP_SNAPSHOT_H__
+#ifndef __OVLSNAP_SNAPSHOT_MANAGER_H__
+#define __OVLSNAP_SNAPSHOT_MANAGER_H__
 
 #include <string>
 
 #include <parson/parson.h>
+
+#include "Snapshot/Commit.h"
+#include "Snapshot/CommitTree.h"
+#include "Snapshot/Snapshot.h"
 
 
 typedef int (*TRAVERSE_CALLBACK)(
@@ -23,18 +27,19 @@ typedef int (*TRAVERSE_CALLBACK)(
 );
 
 
-class Snapshot {
+class SnapshotManager {
 
     public:  // Methods.
-        Snapshot(JSON_Object* statusLoadedData);
-        ~Snapshot();
+        SnapshotManager(JSON_Object* statusLoadedData);
+        ~SnapshotManager();
 
         bool create(std::string snapshotName);
-        bool drop(int topMostSnapshots);
-        bool merge(int topMostSnapshots);
+        bool drop(int topMostSnapshotManagers);
+        bool merge(int topMostSnapshotManagers);
+        bool newBranch(std::string branchName, bool checkout);
+        bool deleteBranch(std::string branchName);
         void status();
 
-        int getSnapshotsCount();
         std::string getLowerDir();
         std::string getUpperDir();
         std::string getWorkDir();
@@ -42,14 +47,17 @@ class Snapshot {
         std::string getRealDir();
 
     private:  // Members.
-        JSON_Object* statusData = NULL;
-
-        JSON_Array* snapshots = NULL;
+        Snapshot* snapshot = NULL;
+        CommitTree commitTree;
+        Commit commit;
         std::string lowerDir;
         std::string upperDir;
 
     private:  // Methods.
+        int mergeHelper(std::string lowerPath, std::string upperPath);
         void computePaths();
+        void appendLowerDir(std::string path);
+        bool cleanupSnapshots(JSON_Object* deletedCommits);
 
         static int traverse(
             const char* lower_root, const char* upper_root,
@@ -64,17 +72,17 @@ class Snapshot {
         );
         static int merge_dp(
             const char* lower_path, const char* upper_path,
-            const struct stat* lower_status,const struct stat* upper_status,
+            const struct stat* lower_status, const struct stat* upper_status,
             int* fts_instr
         );
         static int merge_f_sl(
             const char *lower_path, const char* upper_path,
-            const struct stat* lower_status,const struct stat* upper_status,
+            const struct stat* lower_status, const struct stat* upper_status,
             int* fts_instr
         );
         static int merge_whiteout(
             const char* lower_path, const char* upper_path,
-            const struct stat* lower_status,const struct stat* upper_status,
+            const struct stat* lower_status, const struct stat* upper_status,
             int* fts_instr
         );
 
@@ -86,4 +94,4 @@ class Snapshot {
         static constexpr const char* OVERLAY_MERGED_DIR = "merged";
 };
 
-#endif  // __OVLSNAP_SNAPSHOT_H__
+#endif  // __OVLSNAP_SNAPSHOT_MANAGER_H__

@@ -1,5 +1,5 @@
 /**
- * DropCommand.h
+ * BranchCommand.h
  *
  * Copyright (C) 2018 Kano Computing Ltd.
  * License: http://www.gnu.org/licenses/gpl-2.0.txt GNU GPL v2
@@ -8,8 +8,8 @@
  */
 
 
-#ifndef __OVLSNAP_DROP_COMMAND_H__
-#define __OVLSNAP_DROP_COMMAND_H__
+#ifndef __OVLSNAP_BRANCH_COMMAND_H__
+#define __OVLSNAP_BRANCH_COMMAND_H__
 
 #include <string>
 
@@ -19,12 +19,12 @@
 #include "SnapshotManager.h"
 
 
-class DropCommand: public ICommand {
+class BranchCommand: public ICommand {
 
     public:  // Methods.
-        DropCommand();
-        DropCommand(int topMostSnapshots);
-        ~DropCommand();
+        BranchCommand();
+        BranchCommand(std::string branchName, bool checkout, bool deleteBranch);
+        ~BranchCommand();
 
         // Implement ISerialisable:
         bool initialise(JSON_Value* serialisedData);
@@ -37,7 +37,9 @@ class DropCommand: public ICommand {
 
     private:  // Members.
         unsigned int id;
-        int topMostSnapshots;
+        std::string branchName;
+        bool checkout;
+        bool deleteBranch;
 };
 
-#endif  // __OVLSNAP_DROP_COMMAND_H__
+#endif  // __OVLSNAP_BRANCH_COMMAND_H__

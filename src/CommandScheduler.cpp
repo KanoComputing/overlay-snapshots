@@ -21,7 +21,7 @@ CommandScheduler::CommandScheduler(JSON_Object* statusLoadedData):
 
     // TODO: Check if field is not there.
     this->scheduledCommands = json_object_get_array(
-        this->statusData, "scheduled_commands"
+        this->statusData, "scheduledCommands"
     );
 }
 
@@ -42,6 +42,9 @@ void CommandScheduler::schedule(ICommand& command) {
         case CommandFactory::MERGE:
             //  * MergeCommnad: resize to max num of snapshots, merge consecutives
             break;
+
+        case CommandFactory::BRANCH:
+            break;
     }
 
     json_array_append_value(this->scheduledCommands, command.serialise());
@@ -57,7 +60,7 @@ void CommandScheduler::status() {
         return;
     }
 
-    std::cout << "Scheduled commands after reboot are:\n";
+    std::cout << "Scheduled commands after reboot are:" << std::endl;
 
     ICommand* command;
     JSON_Value* commandData;
@@ -76,6 +79,6 @@ void CommandScheduler::status() {
         }
 
         command->initialise(commandData);
-        std::cout << "  " << command->toString() << "\n";
+        std::cout << "  " << command->toString() << std::endl;
     }
 }

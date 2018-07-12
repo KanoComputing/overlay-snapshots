@@ -17,7 +17,7 @@
 #include "Commands/CreateCommand.h"
 #include "Commands/ICommand.h"
 #include "Logging.h"
-#include "Snapshot.h"
+#include "SnapshotManager.h"
 
 
 CreateCommand::CreateCommand():
@@ -41,16 +41,21 @@ CreateCommand::~CreateCommand() {
 bool CreateCommand::initialise(JSON_Value* serialisedData) {
     JSON_Object* jsonObject = json_value_get_object(serialisedData);
 
-    // TODO: Update the Kano libparson to get these:
-    // if (!json_object_has_value_of_type(jsonObject, "id", JSONNumber)) {
-    //     return false;
-    // }
-    // if (json_object_get_number(jsonObject, "id") != ICommand::CREATE) {
-    //     return false;
-    // }
-    // if (!json_object_has_value_of_type(jsonObject, "snapshot_name", JSONString)) {
-    //     return false;
-    // }
+    if (!json_object_has_value_of_type(jsonObject, "id", JSONNumber)) {
+        LOG_ERROR("CreateCommand: initialise: serialisedData does not contain a"
+                  << " 'id' field with a JSONNumber value!");
+        return false;
+    }
+    if (json_object_get_number(jsonObject, "id") != CommandFactory::CREATE) {
+        LOG_ERROR("CreateCommand: initialise: serialisedData is not for a"
+                  << " CREATE command!");
+        return false;
+    }
+    if (!json_object_has_value_of_type(jsonObject, "snapshot_name", JSONString)) {
+        LOG_ERROR("CreateCommand: initialise: serialisedData does not contain a"
+                  << " 'snapshot_name' field with a JSONString value!");
+        return false;
+    }
 
     this->snapshotName = json_object_get_string(jsonObject, "snapshot_name");
 }
@@ -65,10 +70,10 @@ JSON_Value* CreateCommand::serialise() {
     return root;
 }
 
-bool CreateCommand::execute(Snapshot* snapshot) {
+bool CreateCommand::execute(SnapshotManager* snapshotManager) {
     LOG_DEBUG("CreateCommand: execute: Called");
 
-    snapshot->create(this->snapshotName);
+    snapshotManager->create(this->snapshotName);
 }
 
 unsigned int CreateCommand::getId() {

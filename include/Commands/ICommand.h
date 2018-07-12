@@ -16,13 +16,13 @@
 #include <parson/parson.h>
 
 #include "ISerialisable.h"
-#include "Snapshot.h"
+#include "SnapshotManager.h"
 
 
 class ICommand: public ISerialisable {
 
     public:
-        virtual bool execute(Snapshot* snapshot) = 0;
+        virtual bool execute(SnapshotManager* snapshot) = 0;
         virtual unsigned int getId() = 0;
         virtual std::string toString() = 0;
 };
