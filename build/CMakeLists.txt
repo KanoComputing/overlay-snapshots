@@ -31,7 +31,6 @@ set(OVLSNAP_SRC
     "${SRC}/Commands/CommandFactory.cpp"
     "${SRC}/Commands/CreateCommand.cpp"
     "${SRC}/Commands/DropCommand.cpp"
-    "${SRC}/Commands/EnableCommand.cpp"
     "${SRC}/Commands/MergeCommand.cpp"
     "${SRC}/AppState.cpp"
     "${SRC}/CommandHandler.cpp"
@@ -42,19 +41,20 @@ set(OVLSNAP_SRC
 )
 
 # Create a library from all sources files.
-add_library(ovlsnapstatic STATIC "${OVLSNAP_SRC}")
+set(LIBOVLSNAP_STATIC ovlsnap-static)
+add_library(${LIBOVLSNAP_STATIC} STATIC "${OVLSNAP_SRC}")
 
 # Create the init wrapper executable.
 add_executable(ovlsnap-init "${SRC}/ovlsnap-init.cpp")
 target_link_libraries(ovlsnap-init
-    ovlsnapstatic
+    ${LIBOVLSNAP_STATIC}
     ${LIBPARSON_STATIC}
 )
 
 # Create the userspace executable.
 add_executable(ovlsnap "${SRC}/ovlsnap.cpp")
 target_link_libraries(ovlsnap
-    ovlsnapstatic
+    ${LIBOVLSNAP_STATIC}
     ${LIBDOCOPT_STATIC}
     ${LIBPARSON_STATIC}
 )

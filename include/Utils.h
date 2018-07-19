@@ -15,14 +15,16 @@
 #include <sys/stat.h>
 #include <string>
 
-#include <parson/parson.h>
 #include <attr/xattr.h>
+#include <parson/parson.h>
 
 
 bool jsonArrayContainsString(JSON_Array* jsonArray, std::string someString);
 
 std::string runCmd(const char* cmd);
 bool createDir(const char* path);
+std::string readFileContents(std::string path);
+bool writeFileContents(std::string contents, std::string path);
 
 mode_t permission_bits(const struct stat *status);
 mode_t file_type(const struct stat *status);

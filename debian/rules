@@ -3,7 +3,9 @@
 %:
 	dh $@
 
-.PHONY: override_dh_strip
 
 override_dh_strip:
 	dh_strip -poverlay-snapshots --dbg-package=overlay-snapshots-dbg
+
+
+.PHONY: override_dh_strip

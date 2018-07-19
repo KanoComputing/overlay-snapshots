@@ -65,7 +65,7 @@ JSON_Value* DropCommand::serialise() {
     return root;
 }
 
-bool DropCommand::execute(AppState* state, Snapshot* snapshot) {
+bool DropCommand::execute(Snapshot* snapshot) {
     LOG_DEBUG("DropCommand: execute: Called");
 
     snapshot->drop(this->topMostSnapshots);

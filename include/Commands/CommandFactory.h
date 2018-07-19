@@ -14,7 +14,6 @@
 #include <parson/parson.h>
 
 #include "Commands/ICommand.h"
-#include "Commands/EnableCommand.h"
 #include "Commands/CreateCommand.h"
 #include "Commands/DropCommand.h"
 #include "Commands/MergeCommand.h"
@@ -26,10 +25,9 @@ class CommandFactory {
         // WARNING: Do not change the order of the values below! The status
         // file may contain commands with their types already defined.
         enum CommandType {
-            /* 0 */ ENABLE,
-            /* 1 */ CREATE,
-            /* 2 */ DROP,
-            /* 3 */ MERGE
+            /* 0 */ CREATE,
+            /* 1 */ DROP,
+            /* 2 */ MERGE
         };
 
     public:  // Methods.
@@ -40,7 +38,6 @@ class CommandFactory {
         ICommand* getCommandById(int id);
 
     private:  // Members.
-        EnableCommand* enableCommand = NULL;
         CreateCommand* createCommand = NULL;
         DropCommand* dropCommand = NULL;
         MergeCommand* mergeCommand = NULL;

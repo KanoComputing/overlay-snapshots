@@ -15,7 +15,6 @@
 
 #include <parson/parson.h>
 
-#include "AppState.h"
 #include "Commands/ICommand.h"
 #include "Snapshot.h"
 
@@ -32,7 +31,7 @@ class DropCommand: public ICommand {
         JSON_Value* serialise();
 
         // Implement ICommand:
-        bool execute(AppState* state, Snapshot* snapshot);
+        bool execute(Snapshot* snapshot);
         unsigned int getId();
         std::string toString();
 

@@ -11,29 +11,28 @@
 #ifndef __OVLSNAP_APP_STATE_H__
 #define __OVLSNAP_APP_STATE_H__
 
-#include <parson/parson.h>
+#include <string>
 
 
 class AppState {
 
-    public:  // Enums.
-        // WARNING: Do not change the order of the states below! The status
-        // file contains the current state which is a state defined below.
-        enum State {
-            /* 0 */ DISABLED,
-            /* 1 */ ENABLED
-        };
-
     public:  // Methods.
-        AppState(JSON_Object* statusLoadedData);
+        AppState();
         ~AppState();
 
-        void changeState(AppState::State newState);
-        AppState::State getState();
+        bool enable();
+        bool disable();
+        bool isEnabled();
+        void status();
 
-    private:  // Members.
-        JSON_Object* statusData = NULL;
-        AppState::State state;
+    private:  // Methods.
+        bool isEnabled(std::string cmdlineContents);
+        bool isInitWrapped(std::string cmdlineContents);
+
+    private:  // Constants.
+        static constexpr const char* CMDLINE_PATH = "/boot/cmdline.txt";
+        static constexpr const char* CMDLINE_INIT = "init=";
+        static constexpr const char* CMDLINE_CONFIG = "/bin/ovlsnap-init";
 };
 
 #endif  // __OVLSNAP_APP_STATE_H__
