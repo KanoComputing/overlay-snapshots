@@ -17,7 +17,6 @@
 
 #include "AppState.h"
 #include "CommandScheduler.h"
-#include "Commands/EnableCommand.h"
 #include "Commands/CreateCommand.h"
 #include "Commands/DropCommand.h"
 #include "Commands/MergeCommand.h"
@@ -39,10 +38,10 @@ Usage:
     ovlsnap -h | --help
 
 Commands:
-    enable    Schedule the enabling of snapshot mounting at boot. Once enabled,
-              the created snapshots will be mounted.
-    disable   Schedule the disabling of snapshot mounting at boot. Once
-              disabled, snapshots will not be mounted.
+    enable    Enable the execution of ovlsnap-init at boot to execute any
+              scheduled and mounting operations.
+    disable   Disable the execution of ovlsnap-init at boot and make the
+              programs passive.
     create    Schedule the creation a new snapshot at boot. The new snapshot
               will be placed at the top of the stack.
     drop      Schedule the removal of top most snapshots at boot. This will
@@ -66,12 +65,14 @@ Examples:
     ovlsnap merge 1 --force)";
 
 
-int enable(bool isEnabled, Status status) {
-    EnableCommand command = EnableCommand(isEnabled);
-    CommandScheduler scheduler = CommandScheduler(status.getData());
+int enable(bool isEnabled) {
 
     // TODO: This might fail, implement and handle errors.
-    scheduler.schedule(command);
+    if (isEnabled) {
+        AppState().enable();
+    } else {
+        AppState().disable();
+    }
 
     return 0;
 }
@@ -121,6 +122,10 @@ int clear(Status status) {
 }
 
 int status(Status status) {
+    AppState().status();
+    Snapshot(status.getData()).status();
+    CommandScheduler(status.getData()).status();
+
     std::string cmd = "mount | grep 'overlay'";
     std::string result;
 
@@ -131,10 +136,6 @@ int status(Status status) {
     } else {
         std::cout << "No overlays are mounted.\n";
     }
-
-    // AppState(appStatus.getData()).status();
-    Snapshot(status.getData()).status();
-    CommandScheduler(status.getData()).status();
 
     return 0;
 }
@@ -175,6 +176,9 @@ int main(int argc, char *argv[]) {
         USAGE, {argv + 1, argv + argc}
     );
 
+    // TODO: Check if running with root permissions.
+    // TODO: Check for single program instance.
+
     int rc = 0;
     std::string snapshotName;
     int topMostSnapshots = 1;
@@ -184,10 +188,10 @@ int main(int argc, char *argv[]) {
     appStatus.load();
 
     if (args["enable"].asBool()) {
-        rc = enable(true, appStatus);
+        rc = enable(true);
 
     } else if (args["disable"].asBool()) {
-        rc = enable(false, appStatus);
+        rc = enable(false);
 
     } else if (args["create"].asBool()) {
         snapshotName = verifySnapshotName(args);

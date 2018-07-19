@@ -8,34 +8,93 @@
  */
 
 
+#include <algorithm>
 #include <iostream>
 #include <string>
 
-#include <parson/parson.h>
-
 #include "AppState.h"
 #include "Logging.h"
+#include "Utils.h"
 
 
-AppState::AppState(JSON_Object* statusLoadedData):
-    statusData(statusLoadedData) {
-
-    // TODO: Check if field is not there.
-    this->state = (AppState::State)(int)json_object_get_number(
-        this->statusData, "state"
-    );
-    LOG_DEBUG("AppState: state is: " << std::to_string(this->state));
+AppState::AppState() {
 }
 
 AppState::~AppState() {
 }
 
-void AppState::changeState(AppState::State newState) {
-    this->state = newState;
-    json_object_set_number(this->statusData, "state", newState);
-    LOG_DEBUG("AppState: changeState: new state is: " << std::to_string(this->state));
+bool AppState::enable() {
+    std::string cmdlineContents = readFileContents(AppState::CMDLINE_PATH);
+
+    if (this->isEnabled(cmdlineContents)) {
+        return true;
+    } else if (this->isInitWrapped(cmdlineContents)) {
+        LOG_WARN("AppState: enable: Cannot enable, init is already configured!");
+        return false;
+    }
+
+    // Remove any newlines and append the init wrapping config.
+    cmdlineContents.erase(
+        std::remove(cmdlineContents.begin(), cmdlineContents.end(), '\n'),
+        cmdlineContents.end()
+    );
+    cmdlineContents.append(
+        std::string(" ") +
+        std::string(AppState::CMDLINE_INIT) +
+        std::string(AppState::CMDLINE_CONFIG)
+    );
+
+    return writeFileContents(cmdlineContents, AppState::CMDLINE_PATH);
 }
 
-AppState::State AppState::getState() {
-    return this->state;
+bool AppState::disable() {
+    std::string cmdlineContents = readFileContents(AppState::CMDLINE_PATH);
+
+    if (!this->isEnabled(cmdlineContents)) {
+        return true;
+    }
+
+    std::string config(
+        std::string(AppState::CMDLINE_INIT) +
+        std::string(AppState::CMDLINE_CONFIG)
+    );
+
+    // Remove the init wrapping config from the file contents.
+    // TODO: This will leave space characters about every time.
+    std::size_t position = cmdlineContents.find(config);
+    if (position != std::string::npos) {
+        cmdlineContents.erase(position, config.length());
+    }
+
+    return writeFileContents(cmdlineContents, AppState::CMDLINE_PATH);
+}
+
+bool AppState::isEnabled() {
+    return this->isEnabled(readFileContents(std::string(AppState::CMDLINE_PATH)));
+}
+
+void AppState::status() {
+    if (this->isEnabled()) {
+        std::cout << "ovlsnap-init is enabled and will run on the next boot.\n";
+    } else {
+        std::cout << "ovlsnap-init is disabled and will not run on the next boot.\n";
+    }
+}
+
+// --- Private Methods ---
+
+bool AppState::isEnabled(std::string cmdlineContents) {
+    return (
+        cmdlineContents.find(
+            std::string(AppState::CMDLINE_INIT) +
+            std::string(AppState::CMDLINE_CONFIG)
+        ) != std::string::npos
+    );
+}
+
+bool AppState::isInitWrapped(std::string cmdlineContents) {
+    return (
+        cmdlineContents.find(AppState::CMDLINE_INIT) !=
+        std::string::npos
+    );
 }

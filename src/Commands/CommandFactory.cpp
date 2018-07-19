@@ -12,7 +12,6 @@
 
 #include "Commands/CommandFactory.h"
 #include "Commands/ICommand.h"
-#include "Commands/EnableCommand.h"
 #include "Commands/CreateCommand.h"
 #include "Commands/DropCommand.h"
 #include "Commands/MergeCommand.h"
@@ -23,9 +22,6 @@ CommandFactory::CommandFactory() {
 }
 
 CommandFactory::~CommandFactory() {
-    if (this->enableCommand != NULL) {
-        delete this->enableCommand;
-    }
     if (this->createCommand != NULL) {
         delete this->createCommand;
     }
@@ -56,13 +52,6 @@ ICommand* CommandFactory::getCommandByData(JSON_Value* serialisedData) {
 
 ICommand* CommandFactory::getCommandById(int id) {
     switch (id) {
-        case CommandFactory::ENABLE:
-            if (this->enableCommand == NULL) {
-                this->enableCommand = new EnableCommand();
-            }
-            LOG_DEBUG("CommandFactory: getCommandById: command is EnableCommand");
-            return this->enableCommand;
-
         case CommandFactory::CREATE:
             if (this->createCommand == NULL) {
                 this->createCommand = new CreateCommand();

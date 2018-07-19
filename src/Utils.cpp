@@ -8,13 +8,14 @@
  */
 
 
+#include <errno.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <errno.h>
-#include <string>
-#include <iostream>
 #include <array>
+#include <fstream>
+#include <iostream>
 #include <memory>
+#include <string>
 
 #include <parson/parson.h>
 #include <attr/xattr.h>
@@ -65,6 +66,23 @@ bool createDir(const char* path) {
     if (rc != 0 && errno != EEXIST) {
         return false;
     }
+    return true;
+}
+
+std::string readFileContents(std::string path) {
+    std::ifstream file(path);
+    std::string contents(
+        (std::istreambuf_iterator<char>(file)),
+        (std::istreambuf_iterator<char>())
+    );
+    return contents;
+}
+
+bool writeFileContents(std::string contents, std::string path) {
+    // TODO: Error handling.
+    std::ofstream file(path);
+    file << contents;
+    file.close();
     return true;
 }
 

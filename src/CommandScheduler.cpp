@@ -31,10 +31,6 @@ CommandScheduler::~CommandScheduler() {
 void CommandScheduler::schedule(ICommand& command) {
     // TODO: Handle edge-cases for various types of commands:
     switch(command.getId()) {
-        case CommandFactory::ENABLE:
-            //  * EnableCommand: remove duplicates
-            break;
-
         case CommandFactory::CREATE:
             //  * CreateCommand: check if it already exists
             break;

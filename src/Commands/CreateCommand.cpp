@@ -65,7 +65,7 @@ JSON_Value* CreateCommand::serialise() {
     return root;
 }
 
-bool CreateCommand::execute(AppState* state, Snapshot* snapshot) {
+bool CreateCommand::execute(Snapshot* snapshot) {
     LOG_DEBUG("CreateCommand: execute: Called");
 
     snapshot->create(this->snapshotName);

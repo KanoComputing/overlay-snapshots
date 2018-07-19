@@ -15,7 +15,6 @@
 
 #include <parson/parson.h>
 
-#include "AppState.h"
 #include "ISerialisable.h"
 #include "Snapshot.h"
 
@@ -23,7 +22,7 @@
 class ICommand: public ISerialisable {
 
     public:
-        virtual bool execute(AppState* state, Snapshot* snapshot) = 0;
+        virtual bool execute(Snapshot* snapshot) = 0;
         virtual unsigned int getId() = 0;
         virtual std::string toString() = 0;
 };

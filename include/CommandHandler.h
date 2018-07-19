@@ -13,7 +13,6 @@
 
 #include <parson/parson.h>
 
-#include "AppState.h"
 #include "Commands/CommandFactory.h"
 #include "Commands/ICommand.h"
 #include "Snapshot.h"
@@ -25,7 +24,7 @@ class CommandHandler {
         CommandHandler(JSON_Object* statusLoadedData);
         ~CommandHandler();
 
-        void executeAll(AppState* state, Snapshot* snapshot);
+        void executeAll(Snapshot* snapshot);
 
     private:  // Members.
         JSON_Object* statusData = NULL;

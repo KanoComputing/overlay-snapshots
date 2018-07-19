@@ -10,7 +10,6 @@
 
 #include <parson/parson.h>
 
-#include "AppState.h"
 #include "CommandHandler.h"
 #include "Commands/ICommand.h"
 #include "Commands/CommandFactory.h"
@@ -30,7 +29,7 @@ CommandHandler::CommandHandler(JSON_Object* statusLoadedData):
 CommandHandler::~CommandHandler() {
 }
 
-void CommandHandler::executeAll(AppState* state, Snapshot* snapshot) {
+void CommandHandler::executeAll(Snapshot* snapshot) {
     int commandsCount = json_array_get_count(this->scheduledCommands);
 
     ICommand* command;
@@ -50,7 +49,7 @@ void CommandHandler::executeAll(AppState* state, Snapshot* snapshot) {
         }
 
         command->initialise(commandData);
-        command->execute(state, snapshot);
+        command->execute(snapshot);
     }
 
     json_array_clear(this->scheduledCommands);

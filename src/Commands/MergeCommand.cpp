@@ -64,7 +64,7 @@ JSON_Value* MergeCommand::serialise() {
     return root;
 }
 
-bool MergeCommand::execute(AppState* state, Snapshot* snapshot) {
+bool MergeCommand::execute(Snapshot* snapshot) {
     LOG_DEBUG("MergeCommand: execute: Called");
 
     snapshot->merge(this->topMostSnapshots);

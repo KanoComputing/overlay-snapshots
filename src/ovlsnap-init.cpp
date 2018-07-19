@@ -16,7 +16,6 @@
 #include <stdlib.h>
 #include <stdexcept>
 
-#include "AppState.h"
 #include "CommandHandler.h"
 #include "Logging.h"
 #include "Snapshot.h"
@@ -81,43 +80,29 @@ int main(int argc, char *argv[]) {
         Status status = Status();
         status.load();
 
-        AppState state = AppState(status.getData());
         Snapshot snapshot = Snapshot(status.getData());
 
-        CommandHandler(status.getData()).executeAll(&state, &snapshot);
+        CommandHandler(status.getData()).executeAll(&snapshot);
         status.save();
 
-        switch (state.getState()) {
-            case AppState::DISABLED:
-                unmountDevs();
-                goto end;
-
-            case AppState::ENABLED:
-                rc = mountOverlays(
-                    snapshot.getLowerDir(),
-                    snapshot.getUpperDir(),
-                    snapshot.getMergedDir(),
-                    snapshot.getWorkDir()
-                );
-                if (rc != 0) {
-                    unmountDevs();
-                    rc = 2;  // TODO: Set error in Status instead.
-                    goto end;
-                }
-                unmountProc();
-
-                pivotAndChroot(
-                    snapshot.getMergedDir(),
-                    snapshot.getMergedDir() + snapshot.getRealDir()
-                );
-
-            default:
-                throw std::invalid_argument(
-                    std::string("Unexpected state ") +
-                    std::to_string(state.getState()) +
-                    std::string(" received!")
-                );
+        rc = mountOverlays(
+            snapshot.getLowerDir(),
+            snapshot.getUpperDir(),
+            snapshot.getMergedDir(),
+            snapshot.getWorkDir()
+        );
+        if (rc != 0) {
+            unmountDevs();
+            rc = 2;  // TODO: Set error in Status instead.
+            goto end;
         }
+        unmountProc();
+
+        pivotAndChroot(
+            snapshot.getMergedDir(),
+            snapshot.getMergedDir() + snapshot.getRealDir()
+        );
+
     } catch (...) {
         LOG_ERROR("ovlsnap-init: Error occured!");
     }
